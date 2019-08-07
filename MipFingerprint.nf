@@ -1,16 +1,16 @@
 #!/usr/bin/env nextflow
 nextflow.preview.dsl=2
 
-include mips_trim_dedup from 'NextflowModules/Mips/1.0.1/MipsTrimDedup.nf' params(
+include MipsTrimDedup from 'NextflowModules/Mips/1.0.1/MipsTrimDedup.nf' params(
     outdir: params.outdir,
     mips_trim_dedup: params.mips_trim_dedup,
     design_file: params.mip_design_file,
     uuid_length: params.mip_uuid_length,
     uuid_read: params.mip_uuid_read,
     )
-include fastqc from 'NextflowModules/FastQC/0.11.8/FastQC.nf' params(params)
-include mem as bwa_mem from 'NextflowModules/BWA/0.7.17/MEM.nf' params(params)
-include UnifiedGenotyper as gatk_UnifiedGenotyper_fingerprint from 'NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(
+include FastQC from 'NextflowModules/FastQC/0.11.8/FastQC.nf' params(params)
+include MEM as BWA_MEM from 'NextflowModules/BWA/0.7.17/MEM.nf' params(params)
+include UnifiedGenotyper as GATK_UnifiedGenotyper_fingerprint from 'NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(
     outdir: params.outdir,
     process_outdir: 'fingerprint',
     gatk: params.gatk,
@@ -37,7 +37,7 @@ Channel.fromPath( file(params.samplesheet) )
     }
     .tap{samples_all_fastq} // set of all fastq per sample
 
-mips_trim_dedup(samples_R1_R2_fastq)
-fastqc(samples_all_fastq)
-bwa_mem(mips_trim_dedup.out)
-gatk_UnifiedGenotyper_fingerprint(bwa_mem.out)
+MipsTrimDedup(samples_R1_R2_fastq)
+FastQC(samples_all_fastq)
+BWA_MEM(mips_trim_dedup.out)
+GATK_UnifiedGenotyper_fingerprint(bwa_mem.out)
