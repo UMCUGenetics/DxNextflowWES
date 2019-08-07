@@ -39,5 +39,5 @@ Channel.fromPath( file(params.samplesheet) )
 
 MipsTrimDedup(samples_R1_R2_fastq)
 FastQC(samples_all_fastq)
-BWA_MEM(mips_trim_dedup.out)
-GATK_UnifiedGenotyper_fingerprint(bwa_mem.out)
+BWA_MEM(MipsTrimDedup.out)
+GATK_UnifiedGenotyper_fingerprint(BWA_MEM.out)
