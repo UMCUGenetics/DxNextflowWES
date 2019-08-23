@@ -9,7 +9,7 @@ include MipsTrimDedup from 'NextflowModules/Mips/1.0.1/MipsTrimDedup.nf' params(
     uuid_read: params.mip_uuid_read,
     )
 include FastQC from 'NextflowModules/FastQC/0.11.8/FastQC.nf' params(params)
-include MEM as BWA_MEM from 'NextflowModules/BWA/0.7.17/MEM.nf' params(params)
+include MEM as BWA_MEM from 'NextflowModules/BWA/0.7.5a/MEM.nf' params(params)
 include UnifiedGenotyper as GATK_UnifiedGenotyper_fingerprint from 'NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(
     outdir: params.outdir,
     process_outdir: 'fingerprint',
