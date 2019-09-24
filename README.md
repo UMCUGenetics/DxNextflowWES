@@ -14,10 +14,10 @@ curl -s https://get.nextflow.io | bash
 
 #### Running fingerprint pipeline
 ```bash
-tools/nextflow run MipFingerprint.nf -c MipFingerprint.config --samplesheet samples.tsv --outdir <output_dir_name> [-profile slurm|sge]
+tools/nextflow run MipFingerprint.nf -c MipFingerprint.config --fastq_path <fastq_dir_path> --outdir <output_dir_name> [-profile slurm|sge|mac]
 ```
 
 #### Running WES workflow
 ```bash
-tools/nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> [-profile slurm|sge]
+tools/nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> [-profile slurm|sge|mac]
 ```
