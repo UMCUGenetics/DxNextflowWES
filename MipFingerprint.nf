@@ -10,7 +10,7 @@ include MipsTrimDedup from 'NextflowModules/Mips/1.0.1/MipsTrimDedup.nf' params(
     uuid_length: params.mip_uuid_length,
     uuid_read: params.mip_uuid_read,
     )
-include MEM as BWA_MEM from 'NextflowModules/BWA/0.7.17/MEM.nf' params(params)
+include MEM as BWAMEM from 'NextflowModules/BWA/0.7.17/MEM.nf' params(params)
 include view_sort as Sambamba_view_sort from 'NextflowModules/Sambamba/0.7.0/view_sort.nf' params(params)
 
 fastq_files = extractFastqFromDir(params.fastq_path)
@@ -18,5 +18,5 @@ samples = fastq_files.groupTuple(by:[0])
 
 FastQC(fastq_files)
 MipsTrimDedup(samples)
-BWA_MEM(MipsTrimDedup.out)
-Sambamba_view_sort(BWA_MEM.out)
+BWAMEM(MipsTrimDedup.out)
+SambambaViewSort(BWAMEM.out)
