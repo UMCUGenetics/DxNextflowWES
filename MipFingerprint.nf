@@ -17,7 +17,7 @@ include UnifiedGenotyper as GATKUnifiedGenotyper from './NextflowModules/GATK/3.
 fastq_files = extractFastqFromDir(params.fastq_path)
 samples = fastq_files.groupTuple(by:[0])
 
-workflow MipFingerprint {
+workflow {
     FastQC(fastq_files)
     MipsTrimDedup(samples)
     BWAMEM(MipsTrimDedup.out)
