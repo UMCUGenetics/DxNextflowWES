@@ -9,7 +9,7 @@ include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/Vie
 include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(params)
 
 fastq_files = extractFastqFromDir(params.fastq_path)
-samples = fastq_files.groupTuple(by:[0])
+samples = fastq_files.map( {it.flatten()}).groupTuple(by:[0])
 
 workflow {
     FastQC(fastq_files)
