@@ -12,7 +12,6 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(params)
 
 fastq_files = extractFastqFromDir(params.fastq_path)
 samples = fastq_files.map( {it.flatten()}).groupTuple(by:[0])
-qc_files = []
 
 workflow {
     FastQC(fastq_files)
@@ -23,7 +22,8 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_ViewSort.out)
 
     // Get QC files
-    qc_files.concat(FastQC.out.collect().ifEmpty([]))
-    qc_files.concat(Sambamba_Flagstat.out.collect().ifEmpty([]))
+    qc_files = FastQC.out.collect()
+    qc_files = qc_files.concat(Sambamba_Flagstat.out.collect())
+    qc_files.subscribe { println it }
     MultiQC(qc_files)
 }
