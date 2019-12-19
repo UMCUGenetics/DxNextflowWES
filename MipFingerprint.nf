@@ -21,9 +21,7 @@ workflow {
     Sambamba_Flagstat(Sambamba_ViewSort.out)
     GATK_UnifiedGenotyper(Sambamba_ViewSort.out)
 
-    // Get QC files
-    qc_files = FastQC.out.collect()
-    qc_files = qc_files.concat(Sambamba_Flagstat.out.collect())
-    qc_files.subscribe { println it }
-    MultiQC(qc_files)
+    // Multi QC files
+    multi_qc_files = Channel.empty().mix(FastQC.out, Sambamba_Flagstat.out).collect()
+    MultiQC(multi_qc_files)
 }
