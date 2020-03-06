@@ -2,7 +2,7 @@
 nextflow.preview.dsl=2
 
 include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
-include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf'
+include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
 include MipsTrimDedup from './NextflowModules/Mips/1.0.1/MipsTrimDedup.nf' params(trim_dedup_path: "$params.mips_trim_dedup_path", design_file: "$params.mips_design_file", uuid_length: "$params.mips_uuid_length", uuid_read: "$params.mips_uuid_read")
 include MEM as BWA_MEM from './NextflowModules/BWA/0.7.17/MEM.nf' params(genome:"$params.genome", optional: '-c 100 -M')
 include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/ViewSort.nf'
