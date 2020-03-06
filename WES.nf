@@ -1,52 +1,58 @@
 #!/usr/bin/env nextflow
 nextflow.preview.dsl=2
 
-include FastQC from 'NextflowModules/FastQC/0.11.8/FastQC.nf' params(params)
+include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
 
-def flowcellLaneFromFastq(path) {
-    // parse first line of a FASTQ file (optionally gzip-compressed)
-    // and return the flowcell id and lane number.
-    // expected format:
-    // xx:yy:FLOWCELLID:LANE:... (seven fields)
-    // or
-    // FLOWCELLID:LANE:xx:... (five fields)
-    InputStream fileStream = new FileInputStream(path.toFile())
-    InputStream gzipStream = new java.util.zip.GZIPInputStream(fileStream)
-    Reader decoder = new InputStreamReader(gzipStream, 'ASCII')
-    BufferedReader buffered = new BufferedReader(decoder)
-    def line = buffered.readLine()
-    assert line.startsWith('@')
-    line = line.substring(1)
-    def fields = line.split(' ')[0].split(':')
-    String fcid
-    int lane
-    if (fields.size() == 7) {
-        // CASAVA 1.8+ format
-        fcid = fields[2]
-        lane = fields[3].toInteger()
-    }
-    else if (fields.size() == 5) {
-        fcid = fields[0]
-        lane = fields[1].toInteger()
-    }
-    [fcid, lane]
+include MEM as BWA_MEM from './NextflowModules/BWA/0.7.17/MEM.nf' params(genome:"$params.genome", optional: '-c 100 -M')
+include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/ViewSort.nf'
+include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
+
+include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_known_indels")
+
+include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
+include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
+
+fastq_files = extractFastqPairFromDir(params.fastq_path)
+
+workflow {
+    // Mapping
+    BWA_MEM(fastq_files)
+    Sambamba_ViewSort(BWA_MEM.out)
+    Sambamba_MarkdupMerge(
+        Sambamba_ViewSort.out.map{
+            sample_id, rg_id, bam_file, bai_file -> [sample_id, bam_file]
+        }.groupTuple()
+    )
+
+    // GATk
+    GATK_IndelRealigner(Sambamba_MarkdupMerge.out)
+    
+    // QC
+    FastQC(fastq_files)
+    Sambamba_Flagstat(Sambamba_MarkdupMerge.out)
+
+    // ToDo:
+    // Mapping
+        // bwa mem
+        // sambamba sort, merge + markdup
+
+    // QC
+        // FastQC
+        // flagstat
+        // bammetrics replacement
+
+    // GATk
+        // realignment
+        // haplotypecaller
+        // filter
+        // fingerprint
+
+    // ExonCov
+
+    // Other
+        // Kinship
+        // Single sample vcf
+        // Gendercheck
+        // cleanup
+
 }
-
-def extractFastqFromDir(dir){
-    Channel
-    .fromPath("${dir}/**_R1_*.fastq.gz", type:'file')
-    .ifEmpty { error "No fastq.gz files found in ${dir}!" }
-    .filter { !(it =~ /.*Undetermined.*/) }
-    .map { r1_path ->
-        sample_id = r1_path.getSimpleName().split('_')[0]
-        files = [r1_path]
-        r2_path = file(r1_path.toString().replace('_R1_', '_R2_'))
-        if ( r2_path.exists() ) files.add(r2_path)
-        (flowcell, lane) = flowcellLaneFromFastq(r1_path)
-        rg_id = "${sample_id}_${flowcell}_${lane}"
-        [sample_id, rg_id, files]
-    }
-}
-
-input_fastq = extractFastqFromDir(params.fastq_path)
-FastQC(input_fastq)
