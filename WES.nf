@@ -11,6 +11,10 @@ include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
 include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
+include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(genome:"$params.genome", optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics")
+include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf'
+include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.picard_bait", target:"$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=SAMPLE")
+include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:'')
 
 fastq_files = extractFastqPairFromDir(params.fastq_path)
 
@@ -26,10 +30,21 @@ workflow {
 
     // GATk
     GATK_IndelRealigner(Sambamba_MarkdupMerge.out)
-    
+
     // QC
     FastQC(fastq_files)
     Sambamba_Flagstat(Sambamba_MarkdupMerge.out)
+    PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
+    PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
+    PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
+
+    MultiQC(Channel.empty().mix(
+        FastQC.out,
+        Sambamba_Flagstat.out,
+        PICARD_CollectMultipleMetrics.out
+        PICARD_EstimateLibraryComplexity.out
+        PICARD_CollectHsMetrics.out
+    ).collect())
 
     // ToDo:
     // Mapping
@@ -40,6 +55,12 @@ workflow {
         // FastQC
         // flagstat
         // bammetrics replacement
+            // Picard CollectMultipleMetrics
+                // PROGRAM=CollectAlignmentSummaryMetrics -> multiqc
+                // PROGRAM=CollectInsertSizeMetrics -> multiqc
+                //PROGRAM=QualityScoreDistribution
+            // Picard EstimateLibraryComplexity
+            // Picard CalculateHsMetrics -> multiqc
 
     // GATk
         // realignment
