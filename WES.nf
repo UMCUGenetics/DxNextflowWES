@@ -11,7 +11,7 @@ include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
-include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
+include Flagstat as Samtools_Flagstat from './NextflowModules/Samtools/1.10/Flagstat.nf'
 include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(genome:"$params.genome", optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics")
 include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf'
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.picard_bait", target:"$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=SAMPLE")
@@ -32,18 +32,18 @@ workflow {
 
     // GATk
     GATK_IndelRealigner(Sambamba_MarkdupMerge.out)
-
+    GATK_HaplotypeCaller(GATK_IndelRealigner.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple())
 
     // QC
     FastQC(fastq_files)
-    Sambamba_Flagstat(Sambamba_MarkdupMerge.out)
+    Samtools_Flagstat(Sambamba_MarkdupMerge.out)
     PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
     PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
     PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
 
     MultiQC(Channel.empty().mix(
         FastQC.out,
-        Sambamba_Flagstat.out,
+        Samtools_Flagstat.out,
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out
