@@ -8,6 +8,7 @@ include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/Vie
 include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
 
 include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_ir_options")
+include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
@@ -19,6 +20,7 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
+def chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','MT']
 
 workflow {
     // Mapping
@@ -31,23 +33,23 @@ workflow {
     )
 
     // GATk
-    GATK_IndelRealigner(Sambamba_MarkdupMerge.out)
-    GATK_HaplotypeCaller(GATK_IndelRealigner.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple())
-
+    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    Sambamba_Merge(GATK_IndelRealigner.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
+    
     // QC
-    FastQC(fastq_files)
-    Samtools_Flagstat(Sambamba_MarkdupMerge.out)
-    PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
-    PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
-    PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
+    //FastQC(fastq_files)
+    //Samtools_Flagstat(Sambamba_MarkdupMerge.out)
+    //PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
+    //PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
+    //PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
 
-    MultiQC(Channel.empty().mix(
-        FastQC.out,
-        Samtools_Flagstat.out,
-        PICARD_CollectMultipleMetrics.out,
-        PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out
-    ).collect())
+    //MultiQC(Channel.empty().mix(
+    //    FastQC.out,
+    //    Samtools_Flagstat.out,
+    //    PICARD_CollectMultipleMetrics.out,
+    //    PICARD_EstimateLibraryComplexity.out,
+    //    PICARD_CollectHsMetrics.out
+    //).collect())
 
     // ToDo:
     // Mapping
