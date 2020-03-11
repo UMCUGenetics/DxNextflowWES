@@ -44,8 +44,8 @@ workflow {
     MultiQC(Channel.empty().mix(
         FastQC.out,
         Sambamba_Flagstat.out,
-        PICARD_CollectMultipleMetrics.out
-        PICARD_EstimateLibraryComplexity.out
+        PICARD_CollectMultipleMetrics.out,
+        PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out
     ).collect())
 
