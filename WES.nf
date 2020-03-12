@@ -7,7 +7,8 @@ include MEM as BWA_MEM from './NextflowModules/BWA/0.7.17/MEM.nf' params(genome:
 include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/ViewSort.nf'
 include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
 
-include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_ir_options")
+include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/RealignerTargetCreator.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_rtc_options")
+include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
 include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
 
@@ -33,9 +34,10 @@ workflow {
     )
 
     // GATk
-    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
     Sambamba_Merge(GATK_IndelRealigner.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
-    
+
     // QC
     //FastQC(fastq_files)
     //Samtools_Flagstat(Sambamba_MarkdupMerge.out)
