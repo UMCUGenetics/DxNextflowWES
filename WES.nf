@@ -10,6 +10,8 @@ include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0
 include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/RealignerTargetCreator.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_rtc_options")
 include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
 include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
+
+include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(interval_list: "$params.gatk_hc_interval_list")
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
@@ -21,6 +23,8 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
+
+// Temporary chromosomes, should get them from bam and/or ref genome?
 def chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','MT']
 
 workflow {
@@ -33,17 +37,22 @@ workflow {
         }.groupTuple()
     )
 
-    // GATk
+    // GATK IndelRealigner
     GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
     GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
     Sambamba_Merge(GATK_IndelRealigner.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
 
+    // GATK HaplotypeCaller
+    PICARD_IntervalListTools(Channel.fromPath(params.gatk_hc_interval_list))
+    Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out).view()
+    //GATK_HaplotypeCaller()
+
     // QC
     //FastQC(fastq_files)
-    //Samtools_Flagstat(Sambamba_MarkdupMerge.out)
-    //PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
-    //PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
-    //PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
+    //Samtools_Flagstat(Sambamba_Merge.out)
+    //PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
+    //PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
+    //PICARD_CollectHsMetrics(Sambamba_Merge.out)
 
     //MultiQC(Channel.empty().mix(
     //    FastQC.out,
