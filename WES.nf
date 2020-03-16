@@ -11,8 +11,9 @@ include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowMo
 include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
 include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
 
-include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(interval_list: "$params.gatk_hc_interval_list")
+include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(interval_list: "$params.gatk_hc_interval_list", scatter_count:'500')
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
+include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--assumeIdenticalSamples")
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
 include Flagstat as Samtools_Flagstat from './NextflowModules/Samtools/1.10/Flagstat.nf'
@@ -25,6 +26,7 @@ def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
 
 // Temporary chromosomes, should get them from bam and/or ref genome?
+// How to preserve unmapped reads?
 def chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','MT']
 
 workflow {
@@ -44,8 +46,8 @@ workflow {
 
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath(params.gatk_hc_interval_list))
-    Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out).view()
-    //GATK_HaplotypeCaller()
+    GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
+    GATK_CombineVariants(GATK_HaplotypeCaller.groupTuple())
 
     // QC
     //FastQC(fastq_files)
