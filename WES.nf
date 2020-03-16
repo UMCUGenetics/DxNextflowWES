@@ -13,6 +13,9 @@ include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
 
 include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(interval_list: "$params.gatk_hc_interval_list", scatter_count:'500')
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
+include VariantFiltration as GATK_VariantFiltration from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/VariantFiltration.nf' params(
+    gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
+)
 include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--assumeIdenticalSamples")
 
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
@@ -47,7 +50,8 @@ workflow {
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath(params.gatk_hc_interval_list))
     GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
-    GATK_CombineVariants(GATK_HaplotypeCaller.out.groupTuple())
+    GATK_VariantFiltration(GATK_HaplotypeCaller.out)
+    GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
 
     // QC
     //FastQC(fastq_files)
