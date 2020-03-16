@@ -47,7 +47,7 @@ workflow {
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath(params.gatk_hc_interval_list))
     GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
-    GATK_CombineVariants(GATK_HaplotypeCaller.groupTuple())
+    GATK_CombineVariants(GATK_HaplotypeCaller.out.groupTuple())
 
     // QC
     //FastQC(fastq_files)
