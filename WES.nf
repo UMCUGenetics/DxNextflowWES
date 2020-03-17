@@ -37,7 +37,6 @@ def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
 
 // Temporary chromosomes, should get them from bam and/or ref genome?
-// How to preserve unmapped reads?
 def chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','MT']
 
 workflow {
@@ -64,6 +63,12 @@ workflow {
 
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
+
+    // ExonCov
+    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+
+    // Kinship
+    Kinship(GATK_CombineVariants.out)
 
     // QC
     FastQC(fastq_files)
@@ -106,8 +111,49 @@ workflow {
 
     // Other
         // Kinship
-        // Single sample vcf
-        // Gendercheck
-        // cleanup
+        // Gendercheck -> skip for now
+        // cleanup -> create nextflow version
+        // Single sample vcf -> skip for now
+}
 
+// Custom processes
+process ExonCov {
+    // Custom process to run ExonCov
+    tag {"ExonCov ${sample_id}"}
+    label 'ExonCov'
+    shell = ['/bin/bash', '-euo', 'pipefail']
+
+    input:
+    tuple analysis_id, sample_id, file(bam_file), file(bai_file)
+
+    script:
+    """
+    source ${params.exoncov_path}/venv/bin/activate
+    python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.exoncov_bed} ${analysis_id} ${bam_file}
+    """
+}
+
+process Kinship {
+    // Custom process to run Kinship tools
+    // Container does not work
+    // king: run.c:355: main: Unexpected error: No such file or directory.
+    // Aborted (core dumped)
+    tag {"Kinship ${analysis_id}"}
+    label 'Kinship'
+    //container = '/hpc/diaggen/software/guix_containers/kinship.sif'
+    shell = ['/bin/bash', '-euo', 'pipefail']
+
+    input:
+    tuple analysis_id, file(vcf_file), file(vcf_index)
+
+    output:
+    tuple analysis_id, file("${analysis_id}.kinship")
+
+    script:
+    """
+    ${params.vcftools_path}/vcftools --vcf ${vcf_file} --plink
+    ${params.plink_path}/plink --file out --make-bed --noweb
+    ${params.king_path}/king -b plink.bed --kinship
+    cp king.kin0 ${analysis_id}.kinship
+    """
 }
