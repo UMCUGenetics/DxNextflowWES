@@ -47,7 +47,7 @@ workflow {
     GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
     GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
     Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
-    Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped).groupTuple())
+    Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath(params.gatk_hc_interval_list))
