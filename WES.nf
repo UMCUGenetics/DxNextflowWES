@@ -121,7 +121,7 @@ process ExonCov {
     // Custom process to run ExonCov
     tag {"ExonCov ${sample_id}"}
     label 'ExonCov'
-    shell = ['/bin/bash', '-euo', 'pipefail']
+    shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
     tuple analysis_id, sample_id, file(bam_file), file(bai_file)
