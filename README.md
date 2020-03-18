@@ -14,10 +14,19 @@ curl -s https://get.nextflow.io | bash
 
 #### Running fingerprint pipeline
 ```bash
-tools/nextflow run MipFingerprint.nf -c MipFingerprint.config --fastq_path <fastq_dir_path> --outdir <output_dir_name> [-profile slurm|sge|mac]
+tools/nextflow run MipFingerprint.nf -c MipFingerprint.config --fastq_path <fastq_dir_path> --outdir <output_dir_name> [-profile slurm|mac]
 ```
 
 #### Running WES workflow
 ```bash
-tools/nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> [-profile slurm|sge|mac]
+tools/nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> [-profile slurm|mac]
+```
+
+#### Create Kinship container
+```bash
+guixr pack -f squashfs -RR -S /bin=bin king plink-ng vcftools@0.1.14 bash glibc-utf8-locales tzdata coreutils procps grep sed bootstrap-binaries
+cp change/to/guix/path.gz.squashfs kinship.gz.squashfs
+unsquashfs kinship.gz.squashfs
+chmod -R 0775 squashfs-root
+singularity build kinship.sif squashfs-root
 ```
