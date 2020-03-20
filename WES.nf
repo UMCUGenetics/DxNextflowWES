@@ -27,11 +27,10 @@ include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3
 
 // QC Modules
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
-include Flagstat as Samtools_Flagstat from './NextflowModules/Samtools/1.10/Flagstat.nf'
 include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(genome:"$params.genome", optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics")
-include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf'
+include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf' params(optional:"OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500")
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.picard_bait", target:"$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=SAMPLE")
-include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:'')
+include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -72,14 +71,12 @@ workflow {
 
     // QC
     FastQC(fastq_files)
-    Samtools_Flagstat(Sambamba_Merge.out)
     PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
     PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
 
     MultiQC(Channel.empty().mix(
        FastQC.out,
-       Samtools_Flagstat.out,
        PICARD_CollectMultipleMetrics.out,
        PICARD_EstimateLibraryComplexity.out,
        PICARD_CollectHsMetrics.out

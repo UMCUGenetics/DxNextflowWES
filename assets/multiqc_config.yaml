@@ -1,0 +1,48 @@
+extra_fn_clean_exts:
+    - type: regex
+      pattern: '_\w*_S\d_L\d{3}_R\d_\d{3}'
+    - '.LibraryComplexity'
+
+top_modules:
+- 'fastqc'
+- 'picard'
+
+picard_config:
+    general_stats_target_coverage:
+        - 2
+        - 10
+        - 20
+        - 30
+        - 40
+        - 50
+        - 100
+
+table_columns_visible:
+    FastQC:
+        percent_duplicates: False
+        percent_gc: False
+        avg_sequence_length: False
+        percent_fails: False
+        total_sequences: False
+    Picard:
+        PCT_TARGET_BASES_2X: False
+        PCT_TARGET_BASES_10X: True
+        PCT_TARGET_BASES_20X: True
+        PCT_TARGET_BASES_30X: True
+        PCT_TARGET_BASES_40X: False
+        PCT_TARGET_BASES_50X: False
+        PCT_TARGET_BASES_100X: False
+        PCT_PF_READS_ALIGNED: False
+        FOLD_ENRICHMENT: False
+        summed_median: True
+        summed_mean: False
+        PERCENT_DUPLICATION: True
+
+table_cond_formatting_rules:
+    mqc-generalstats-picard-PCT_TARGET_BASES_20X:
+        pass:
+            - gt: 96
+        warn:
+            - lt: 96
+        fail:
+            - lt: 95
