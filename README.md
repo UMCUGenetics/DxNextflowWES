@@ -1,5 +1,5 @@
-# DxNextflowWorkflows
-Genome Diagnostics Nextflow workflows
+# DxNextflowWES
+Genome Diagnostics Nextflow WES workflow
 
 #### Get Nextflow Modules
 ```bash
@@ -10,11 +10,6 @@ git submodule update --init --recursive
 ```bash
 mkdir tools && cd tools
 curl -s https://get.nextflow.io | bash
-```
-
-#### Running fingerprint pipeline
-```bash
-tools/nextflow run MipFingerprint.nf -c MipFingerprint.config --fastq_path <fastq_dir_path> --outdir <output_dir_name> [-profile slurm|mac]
 ```
 
 #### Running WES workflow
