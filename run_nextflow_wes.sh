@@ -5,6 +5,8 @@ output=`realpath $2`
 email=$3
 mkdir -p $output && cd $output
 
+nextflow_path='/hpc/diaggen/software/development/DxNextflowWES'
+
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=24:00:00
@@ -18,8 +20,8 @@ sbatch <<EOT
 
 module load Java/1.8.0_60
 
-/hpc/diaggen/software/tools/nextflow run /hpc/diaggen/projects/workflow/DxNextflowWES/WES.nf \
--c /hpc/diaggen/projects/workflow/DxNextflowWES/WES.config \
+/hpc/diaggen/software/tools/nextflow run $netflow_path/WES.nf \
+-c $nextflow_path/WES.config \
 --fastq_path $input \
 --outdir $output \
 -profile slurm \
