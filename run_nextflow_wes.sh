@@ -20,7 +20,7 @@ sbatch <<EOT
 
 module load Java/1.8.0_60
 
-/hpc/diaggen/software/tools/nextflow run $netflow_path/WES.nf \
+/hpc/diaggen/software/tools/nextflow run $nextflow_path/WES.nf \
 -c $nextflow_path/WES.config \
 --fastq_path $input \
 --outdir $output \
