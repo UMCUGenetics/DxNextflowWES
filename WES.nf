@@ -21,6 +21,7 @@ include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModu
     gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
 )
 include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--assumeIdenticalSamples")
+include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
 
 // Fingerprint modules
 include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--intervals $params.fingerprint_target --output_mode EMIT_ALL_SITES")
@@ -59,6 +60,7 @@ workflow {
     GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
+    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}.collect()))
 
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
