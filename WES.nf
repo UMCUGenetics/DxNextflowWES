@@ -85,28 +85,36 @@ workflow {
 
 // Workflow completion notification
 workflow.onComplete {
+    // HTML Template
+    def template = new File("$baseDir/assets/workflow_complete.html")
+    def binding = [
+        runName: analysis_id
+        workflow: workflow
+    ]
+    def email_html = engine.createTemplate(template).make(binding).toString(
+
     // Email message
-    def message = """\
-        WES Workflow summary
-        ---------------------------
-        Started at        : ${workflow.start.format('dd-mm-yyyy HH:mm:ss')}
-        Completed at      : ${workflow.complete.format('dd-mm-yyyy HH:mm:ss')}
-        Duration          : ${workflow.duration}
-        Success           : ${workflow.success}
-        Launch directory  :	${workflow.launchDir}
-        Work directory	  : ${workflow.workDir.toUriString()}
-        Project directory : ${workflow.projectDir}
-        Workflow name     : ${workflow.scriptName ?: '-'}
-        Nextflow version  : ${workflow.nextflow.version}, build ${workflow.nextflow.build} (${workflow.nextflow.timestamp})
-    """.stripIndent()
+    // def message = """\
+    //     WES Workflow summary
+    //     ---------------------------
+    //     Started at        : ${workflow.start.format('dd-mm-yyyy HH:mm:ss')}
+    //     Completed at      : ${workflow.complete.format('dd-mm-yyyy HH:mm:ss')}
+    //     Duration          : ${workflow.duration}
+    //     Success           : ${workflow.success}
+    //     Launch directory  :	${workflow.launchDir}
+    //     Work directory	  : ${workflow.workDir.toUriString()}
+    //     Project directory : ${workflow.projectDir}
+    //     Workflow name     : ${workflow.scriptName ?: '-'}
+    //     Nextflow version  : ${workflow.nextflow.version}, build ${workflow.nextflow.build} (${workflow.nextflow.timestamp})
+    // """.stripIndent()
 
     // Send email
     if (workflow.success) {
         def subject = "WES Workflow Successful: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: message, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
+        sendMail(to: params.email, subject: subject, body: email_html, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
     } else {
         def subject = "WES Workflow Failed: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: message)
+        sendMail(to: params.email, subject: subject, body: email_html)
     }
 }
 
