@@ -4,6 +4,7 @@ input=`realpath $1`
 output=`realpath $2`
 email=$3
 mkdir -p $output && cd $output
+mkdir -p log
 
 workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
 
