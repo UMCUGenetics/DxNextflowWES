@@ -81,36 +81,6 @@ workflow {
        PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
        PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
     ).groupTuple())
-
-    // ToDo:
-    // Mapping
-        // bwa mem
-        // sambamba sort, merge + markdup
-
-    // QC
-        // FastQC
-        // flagstat
-        // bammetrics replacement
-            // Picard CollectMultipleMetrics
-                // PROGRAM=CollectAlignmentSummaryMetrics -> multiqc
-                // PROGRAM=CollectInsertSizeMetrics -> multiqc
-                //PROGRAM=QualityScoreDistribution
-            // Picard EstimateLibraryComplexity
-            // Picard CalculateHsMetrics -> multiqc
-
-    // GATk
-        // realignment
-        // haplotypecaller
-        // filter
-        // fingerprint
-
-    // ExonCov
-
-    // Other
-        // Kinship
-        // Gendercheck -> skip for now
-        // cleanup -> create nextflow version
-        // Single sample vcf -> skip for now
 }
 
 // Custom processes
