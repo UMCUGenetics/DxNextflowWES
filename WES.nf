@@ -88,10 +88,11 @@ workflow.onComplete {
     // HTML Template
     def template = new File("$baseDir/assets/workflow_complete.html")
     def binding = [
-        runName: analysis_id
+        runName: analysis_id,
         workflow: workflow
     ]
-    def email_html = engine.createTemplate(template).make(binding).toString(
+    def engine = new groovy.text.GStringTemplateEngine()
+    def email_html = engine.createTemplate(template).make(binding).toString()
 
     // Email message
     // def message = """\
