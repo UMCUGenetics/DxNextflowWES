@@ -76,11 +76,11 @@ workflow {
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
 
     MultiQC(Channel.empty().mix(
-       FastQC.out,
-       PICARD_CollectMultipleMetrics.out,
-       PICARD_EstimateLibraryComplexity.out,
-       PICARD_CollectHsMetrics.out
-    ).collect())
+       FastQC.out.flatten().map{file -> [analysis_id, file]},
+       PICARD_CollectMultipleMetrics.out.flatten().map{file -> [analysis_id, file]},
+       PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
+       PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
+    ).groupTuple())
 
     // ToDo:
     // Mapping
