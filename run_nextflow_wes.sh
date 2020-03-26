@@ -13,8 +13,8 @@ sbatch <<EOT
 #SBATCH --nodes=1
 #SBATCH --mem 5G
 #SBATCH --gres=tmpspace:10G
-#SBATCH -o slurm_nextflow_wes.%j.out
-#SBATCH -e slurm_nextflow_wes.%j.err
+#SBATCH -o log/slurm_nextflow_wes.%j.out
+#SBATCH -e log/slurm_nextflow_wes.%j.err
 #SBATCH --mail-user $email
 #SBATCH --mail-type FAIL
 
