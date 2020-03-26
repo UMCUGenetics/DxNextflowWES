@@ -85,11 +85,6 @@ workflow {
 
 // Workflow completion notification
 workflow.onComplete {
-
-    // Email Subject
-    def subject = "WES Workflow Successful: ${analysis_id}"
-    if (!workflow.success) subject = "Nextflow WES Workflow Failed: ${analysis_id}"
-
     // Email message
     def message = """\
         WES Workflow summary
@@ -105,8 +100,14 @@ workflow.onComplete {
         Nextflow version  : ${workflow.nextflow.version}, build ${workflow.nextflow.build} (${workflow.nextflow.timestamp})
     """.stripIndent()
 
-    def email_to = params.email
-    sendMail(to: params.email, subject: subject, body: message, attach: MultiQC.out[0])
+    // Send email
+    if (workflow.success) {
+        def subject = "WES Workflow Successful: ${analysis_id}"
+        sendMail(to: params.email, subject: subject, body: message, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
+    } else {
+        def subject = "WES Workflow Failed: ${analysis_id}"
+        sendMail(to: params.email, subject: subject, body: message)
+    }
 }
 
 // Custom processes
