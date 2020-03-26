@@ -83,6 +83,38 @@ workflow {
     ).groupTuple())
 }
 
+// Workflow completion notification
+workflow.onComplete {
+    // Subject
+    def subject = "Nextflow WES Workflow Successful: ${analysis_id}"
+    if (!workflow.success) subject = "Nextflow WES Workflow Failed: ${analysis_id}"
+
+    // Email fields
+    def email_data = [
+        runName: analysis_id
+    ]
+
+    def hf = new File("$baseDir/assets/workflow_complete_email.html")
+    def html_template = engine.createTemplate(hf).make(email_data)
+    def email_html = html_template.toString()
+
+    def smail_fields = [
+        email: params.email,
+        subject: subject,
+    //    email_txt: email_txt,
+        email_html: email_html,
+        baseDir: "$baseDir",
+        //mqcFile: mqc_report,
+        //mqcMaxSize: params.maxMultiqcEmailFileSize.toBytes()
+    ]
+
+    def sf = new File("$baseDir/assets/sendmail_template.txt")
+    def sendmail_template = engine.createTemplate(sf).make(smail_fields)
+    def sendmail_html = sendmail_template.toString()
+
+    [ 'sendmail', '-t' ].execute() << sendmail_html
+}
+
 // Custom processes
 process ExonCov {
     // Custom process to run ExonCov
