@@ -87,12 +87,12 @@ workflow {
 workflow.onComplete {
 
     // Email Subject
-    def subject = "Nextflow WES Workflow Successful: ${analysis_id}"
+    def subject = "WES Workflow Successful: ${analysis_id}"
     if (!workflow.success) subject = "Nextflow WES Workflow Failed: ${analysis_id}"
 
     // Email message
     def message = """\
-        Pipeline execution summary
+        WES Workflow summary
         ---------------------------
         Started at        : ${workflow.start.format('dd-mm-yyyy HH:mm:ss')}
         Completed at      : ${workflow.complete.format('dd-mm-yyyy HH:mm:ss')}
