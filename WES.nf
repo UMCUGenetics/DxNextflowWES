@@ -94,21 +94,6 @@ workflow.onComplete {
     def engine = new groovy.text.GStringTemplateEngine()
     def email_html = engine.createTemplate(template).make(binding).toString()
 
-    // Email message
-    // def message = """\
-    //     WES Workflow summary
-    //     ---------------------------
-    //     Started at        : ${workflow.start.format('dd-mm-yyyy HH:mm:ss')}
-    //     Completed at      : ${workflow.complete.format('dd-mm-yyyy HH:mm:ss')}
-    //     Duration          : ${workflow.duration}
-    //     Success           : ${workflow.success}
-    //     Launch directory  :	${workflow.launchDir}
-    //     Work directory	  : ${workflow.workDir.toUriString()}
-    //     Project directory : ${workflow.projectDir}
-    //     Workflow name     : ${workflow.scriptName ?: '-'}
-    //     Nextflow version  : ${workflow.nextflow.version}, build ${workflow.nextflow.build} (${workflow.nextflow.timestamp})
-    // """.stripIndent()
-
     // Send email
     if (workflow.success) {
         def subject = "WES Workflow Successful: ${analysis_id}"
