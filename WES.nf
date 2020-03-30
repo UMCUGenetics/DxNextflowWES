@@ -134,7 +134,7 @@ process Kinship {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-    tuple analysis_id, file(vcf_file), file(vcf_index), file(ped_file)
+    tuple analysis_id, file(vcf_file), file(vcf_index)
 
     output:
     tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.check_kinship.out")
@@ -145,6 +145,6 @@ process Kinship {
     ${params.plink_path}/plink --file out --make-bed --noweb
     ${params.king_path}/king -b plink.bed --kinship
     cp king.kin0 ${analysis_id}.kinship
-    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.check_kinship.out
+    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${params.ped_folder}/${analysis_id}.ped > ${analysis_id}.check_kinship.out
     """
 }
