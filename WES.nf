@@ -61,7 +61,7 @@ workflow {
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
     GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
-    
+
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
@@ -134,10 +134,10 @@ process Kinship {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-    tuple analysis_id, file(vcf_file), file(vcf_index)
+    tuple analysis_id, file(vcf_file), file(vcf_index), file(ped_file)
 
     output:
-    tuple analysis_id, file("${analysis_id}.kinship")
+    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.check_kinship.out")
 
     script:
     """
@@ -145,5 +145,6 @@ process Kinship {
     ${params.plink_path}/plink --file out --make-bed --noweb
     ${params.king_path}/king -b plink.bed --kinship
     cp king.kin0 ${analysis_id}.kinship
+    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.check_kinship.out
     """
 }
