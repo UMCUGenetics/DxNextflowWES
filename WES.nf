@@ -31,6 +31,7 @@ include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:
 include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(genome:"$params.genome", optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
 include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf' params(optional:"OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500")
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.picard_bait", target:"$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
+include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
 include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
@@ -76,11 +77,19 @@ workflow {
     PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
     PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
+    Sambamba_Flagstat(Sambamba_Merge.out)
 
     MultiQC(Channel.empty().mix(
        FastQC.out.flatten().map{file -> [analysis_id, file]},
        PICARD_CollectMultipleMetrics.out.flatten().map{file -> [analysis_id, file]},
        PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
+       PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
+    ).groupTuple())
+
+    GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
+    TrendAnalysisTool(Channel.empty().mix(
+       GATK_CombineVariants.out,
+       GetStatsFromFlagstat.out.map{file -> [analysis_id, file]},
        PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
     ).groupTuple())
 }
@@ -146,5 +155,38 @@ process Kinship {
     ${params.king_path}/king -b plink.bed --kinship
     cp king.kin0 ${analysis_id}.kinship
     python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${params.ped_folder}/${analysis_id}.ped > ${analysis_id}.kinship_check.out
+    """
+}
+
+process GetStatsFromFlagstat {
+    // Custom process to run get_stats_from_flagstat.pl
+    tag {"GetStatsFromFlagstat"}
+    label 'GetStatsFromFlagstat'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+    file(flagstat_files: "*")
+
+    output:
+    file('run_stats.txt')
+
+    script:
+    """
+    perl ${baseDir}/assets/get_stats_from_flagstat.pl > run_stats.txt")
+    """
+}
+
+process TrendAnalysisTool {
+    // Custom process to run Trend_Analysis_tool
+    tag {"TrendAnalysisTool ${analysis_id}"}
+    label 'TrendAnalysisTool'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+    tuple analysis_id, file(vcf_file), file(vcf_index), file(run_stats), file(hs_metrics)
+
+    script:
+    """
+    ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \PWD
     """
 }
