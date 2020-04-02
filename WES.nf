@@ -78,20 +78,23 @@ workflow {
     PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
     Sambamba_Flagstat(Sambamba_Merge.out)
-
-    MultiQC(Channel.empty().mix(
-       FastQC.out.flatten().map{file -> [analysis_id, file]},
-       PICARD_CollectMultipleMetrics.out.flatten().map{file -> [analysis_id, file]},
-       PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
-       PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
-    ).groupTuple())
-
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
-    TrendAnalysisTool(Channel.empty().mix(
-       GATK_CombineVariants.out,
-       GetStatsFromFlagstat.out.map{file -> [analysis_id, file]},
-       PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
-    ).groupTuple())
+
+    MultiQC(
+        Channel.empty().mix(
+            FastQC.out.flatten().map{file -> [analysis_id, file]},
+            PICARD_CollectMultipleMetrics.out.flatten().map{file -> [analysis_id, file]},
+            PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
+            PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
+        ).groupTuple()
+    )
+
+    TrendAnalysisTool(
+        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+            .concat(PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]})
+            .groupTuple()
+    )
 }
 
 // Workflow completion notification
@@ -172,7 +175,7 @@ process GetStatsFromFlagstat {
 
     script:
     """
-    perl ${baseDir}/assets/get_stats_from_flagstat.pl > run_stats.txt")
+    perl ${baseDir}/assets/get_stats_from_flagstat.pl > run_stats.txt
     """
 }
 
@@ -183,10 +186,11 @@ process TrendAnalysisTool {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-    tuple analysis_id, file(vcf_file), file(vcf_index), file(run_stats), file(hs_metrics)
+    tuple analysis_id, file(input_files: "*")
 
     script:
     """
-    ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \PWD
+    ls -l
+    #${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \PWD
     """
 }
