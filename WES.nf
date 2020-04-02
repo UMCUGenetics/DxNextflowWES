@@ -190,6 +190,7 @@ process TrendAnalysisTool {
 
     script:
     """
+    python create_hsmetrics_summary.py *.HsMetrics.txt
     ls -l
     \#${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \$PWD
     """
