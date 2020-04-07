@@ -79,7 +79,6 @@ workflow {
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
     Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
-    CreateHSMetricsSummary(PICARD_CollectHsMetrics.out.collect())
 
     MultiQC(
         Channel.empty().mix(
@@ -93,7 +92,7 @@ workflow {
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
             .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSMetricsSummary.out.map{file -> [analysis_id, file]})
+            .concat(PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]})
             .groupTuple()
     )
 }
@@ -180,24 +179,6 @@ process GetStatsFromFlagstat {
     """
 }
 
-process CreateHSMetricsSummary {
-    // Custom process to run create_hsmetrics_summary.py
-    tag {"CreateHSMetricsSummary"}
-    label 'CreateHSMetricsSummary'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-    file(hsmetric_files: "*")
-
-    output:
-    file('HSMetrics_summary.txt')
-
-    script:
-    """
-    python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetric_files}
-    """
-}
-
 process TrendAnalysisTool {
     // Custom process to run Trend_Analysis_tool
     tag {"TrendAnalysisTool ${analysis_id}"}
@@ -208,8 +189,9 @@ process TrendAnalysisTool {
     tuple analysis_id, file(input_files: "*")
 
     script:
-    //${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \$PWD
     """
+    python create_hsmetrics_summary.py *.HsMetrics.txt
     ls -l
+    \#${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \$PWD
     """
 }
