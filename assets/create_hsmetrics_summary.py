@@ -32,22 +32,16 @@ if __name__ == "__main__":
                 if not summary_header:
                     summary_header = header
                 elif header != summary_header:
-                    print "ERROR"
+                    sys.exit("ERROR: HSMetrics headers are different.")
 
             elif header and line:
                 data = [bait_intervals, target_intervals]
                 data += line.split('\t')
                 summary_data[sample] = data
 
-    sys.stdout.write('\t{}'.format('\t'.join(summary_data.keys())))
-    sys.stdout.write('\n')
+    # Print output
+    print('\t{}'.format('\t'.join(summary_data.keys())))
     for index, item in enumerate(summary_header):
-        sys.stdout.write(item)
-        sys.stdout.write('\t')
-        for sample in summary_data:
-            try:
-                sys.stdout.write(summary_data[sample][index])
-            except IndexError:
-                sys.stdout.write('')
-            sys.stdout.write('\t')
-        sys.stdout.write('\n')
+        output = [item]
+        output += [summary_data[sample][index] if index < len(summary_data[sample]) else '' for sample in summary_data]
+        print('\t'.join(output))
