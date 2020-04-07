@@ -211,6 +211,6 @@ process TrendAnalysisTool {
 
     script:
     """
-    ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
+    source ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
     """
 }
