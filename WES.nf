@@ -74,9 +74,12 @@ workflow {
 
     // QC
     FastQC(fastq_files)
+
     PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
     PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
+    CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
+
     Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
@@ -92,7 +95,7 @@ workflow {
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
             .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]})
+            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
             .groupTuple()
     )
 }
@@ -179,6 +182,24 @@ process GetStatsFromFlagstat {
     """
 }
 
+process CreateHSmetricsSummary {
+    // Custom process to run get_stats_from_flagstat.pl
+    tag {"CreateHSmetricsSummary"}
+    label 'CreateHSmetricsSummary'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+    file(hsmetrics_files: "*")
+
+    output:
+    file('HSMetrics_summary.txt')
+
+    script:
+    """
+    python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
+    """
+}
+
 process TrendAnalysisTool {
     // Custom process to run Trend_Analysis_tool
     tag {"TrendAnalysisTool ${analysis_id}"}
@@ -188,13 +209,9 @@ process TrendAnalysisTool {
     input:
     tuple analysis_id, file(input_files: "*")
 
-    output:
-    file('HSMetrics_summary.txt')
-
     script:
     //${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \$PWD
     """
-    python ${baseDir}/assets/create_hsmetrics_summary.py *.HsMetrics.txt > HSMetrics_summary.txt
     ls -l
     """
 }
