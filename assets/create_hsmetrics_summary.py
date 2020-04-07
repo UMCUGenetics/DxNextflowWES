@@ -1,6 +1,7 @@
 #! /usr/bin/env python
 import argparse
 import re
+import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create HSMetrics summary file')
@@ -38,16 +39,15 @@ if __name__ == "__main__":
                 data += line.split('\t')
                 summary_data[sample] = data
 
-    with open('HSMetrics_summary.txt', 'w') as hsmetrics_summary:
-        hsmetrics_summary.write('\t{}'.format('\t'.join(summary_data.keys())))
-        hsmetrics_summary.write('\n')
-        for index, item in enumerate(summary_header):
-            hsmetrics_summary.write(item)
-            hsmetrics_summary.write('\t')
-            for sample in summary_data:
-                try:
-                    hsmetrics_summary.write(summary_data[sample][index])
-                except IndexError:
-                    hsmetrics_summary.write('')
-                hsmetrics_summary.write('\t')
-            hsmetrics_summary.write('\n')
+    sys.stdout.write('\t{}'.format('\t'.join(summary_data.keys())))
+    sys.stdout.write('\n')
+    for index, item in enumerate(summary_header):
+        sys.stdout.write(item)
+        sys.stdout.write('\t')
+        for sample in summary_data:
+            try:
+                sys.stdout.write(summary_data[sample][index])
+            except IndexError:
+                sys.stdout.write('')
+            sys.stdout.write('\t')
+        sys.stdout.write('\n')
