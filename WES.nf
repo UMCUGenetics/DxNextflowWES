@@ -36,9 +36,10 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
-
-// Temporary chromosomes, should get them from bam and/or ref genome?
-def chromosomes = ['1','2','3','4','5','6','7','8','9','10','11','12','13','14','15','16','17','18','19','20','21','22','X','Y','MT']
+def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
+    .splitCsv(sep:'\t', skip:1)
+    .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
+    .collect()
 
 workflow {
     // Mapping
