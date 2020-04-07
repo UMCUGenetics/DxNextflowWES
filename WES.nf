@@ -210,8 +210,7 @@ process TrendAnalysisTool {
     tuple analysis_id, file(input_files: "*")
 
     script:
-    //${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} \$PWD
     """
-    ls -l
+    ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
     """
 }
