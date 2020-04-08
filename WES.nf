@@ -39,7 +39,6 @@ def analysis_id = params.outdir.split('/')[-1]
 def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
     .splitCsv(sep:'\t', skip:1)
     .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
-    .collect()
 
 workflow {
     // Mapping
