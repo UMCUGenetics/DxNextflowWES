@@ -178,7 +178,7 @@ process GetStatsFromFlagstat {
 
     script:
     """
-    perl ${baseDir}/assets/get_stats_from_flagstat.pl > run_stats.txt
+    python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
     """
 }
 
@@ -211,6 +211,7 @@ process TrendAnalysisTool {
 
     script:
     """
-    source ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
+    source ${params.trend_analysis_path}/venv/bin/activate
+    python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
     """
 }
