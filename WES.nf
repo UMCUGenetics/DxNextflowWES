@@ -36,9 +36,17 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
+
+// Define chromosomes used to scatter GATK_RealignerTargetCreator
 def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
     .splitCsv(sep:'\t', skip:1)
     .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
+
+// Define ped file, used in Kinship
+def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
+if (!ped_file.exists()) {
+    exit 1, "${ped_file.getName} not found in ${ped_file.getParent}."
+}
 
 workflow {
     // Mapping
@@ -160,7 +168,7 @@ process Kinship {
     ${params.plink_path}/plink --file out --make-bed --noweb
     ${params.king_path}/king -b plink.bed --kinship
     cp king.kin0 ${analysis_id}.kinship
-    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${params.ped_folder}/${analysis_id}.ped > ${analysis_id}.kinship_check.out
+    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.kinship_check.out
     """
 }
 
