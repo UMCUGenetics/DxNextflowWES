@@ -1,4 +1,8 @@
 #!/bin/bash
+set -euo pipefail
+
+workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
+
 # Set input and output dirs
 input=`realpath $1`
 output=`realpath $2`
@@ -6,8 +10,7 @@ email=$3
 mkdir -p $output && cd $output
 mkdir -p log
 
-workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
-
+if [ ! -f 'workflow.running' -a ! -f 'workflow.done '-a ! -f 'workflow.failed' ]; then
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=24:00:00
@@ -18,8 +21,11 @@ sbatch <<EOT
 #SBATCH -e log/slurm_nextflow_wes.%j.err
 #SBATCH --mail-user $email
 #SBATCH --mail-type FAIL
+set -euo pipefail
 
 module load Java/1.8.0_60
+
+touch workflow.running
 
 /hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
@@ -28,4 +34,28 @@ module load Java/1.8.0_60
 --email $email \
 -profile slurm \
 -resume -ansi-log false
+
+if [ $? -eq 0 ]; then
+    echo "Nextflow done."
+
+    echo "Running Nextflow clean"
+    /hpc/diaggen/software/tools/nextflow clean -f -k
+
+    echo "Creating md5sum"
+    find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
+
+    echo "WES workflow completed successfully."
+    rm workflow.running
+    touch workflow.done
+
+    exit 0
+else
+    echo "Nextflow failed"
+    rm workflow.running
+    touch workflow.failed
+    exit 1
+fi
 EOT
+else
+echo "Workflow job not submitted, please check $output for 'workflow.status' files."
+fi

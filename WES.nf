@@ -134,7 +134,7 @@ process ExonCov {
     // Custom process to run ExonCov
     tag {"ExonCov ${sample_id}"}
     label 'ExonCov'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     tuple analysis_id, sample_id, file(bam_file), file(bai_file)
@@ -176,7 +176,7 @@ process GetStatsFromFlagstat {
     // Custom process to run get_stats_from_flagstat.pl
     tag {"GetStatsFromFlagstat"}
     label 'GetStatsFromFlagstat'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     file(flagstat_files: "*")
@@ -194,7 +194,7 @@ process CreateHSmetricsSummary {
     // Custom process to run get_stats_from_flagstat.pl
     tag {"CreateHSmetricsSummary"}
     label 'CreateHSmetricsSummary'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     file(hsmetrics_files: "*")
@@ -212,7 +212,7 @@ process TrendAnalysisTool {
     // Custom process to run Trend_Analysis_tool
     tag {"TrendAnalysisTool ${analysis_id}"}
     label 'TrendAnalysisTool'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     tuple analysis_id, file(input_files: "*")
