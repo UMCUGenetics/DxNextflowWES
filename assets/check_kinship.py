@@ -71,6 +71,8 @@ def check_kinship(kinship_file, samples):
                 print_kinship(sample_1, sample_2, kinship, False, 'NA', 'FAIL')
                 kinship_errors = True
 
+    return kinship_errors
+
 
 def print_kinship(sample_1, sample_2, kinship, fam_status, relation_status, kinship_status):
     print('{0}\t{1}\t{2}\t{3}\t{4}\t{5}'.format(sample_1, sample_2, kinship, fam_status, relation_status, kinship_status))
@@ -81,11 +83,13 @@ if __name__ == "__main__":
     parser.add_argument('kinship_file', type=argparse.FileType('r'), help='Kinship file')
     parser.add_argument('ped_file', type=argparse.FileType('r'), help='PED file')
     arguments = parser.parse_args()
+
     # Parse ped file and check kinship
     samples = parse_ped(arguments.ped_file)
     kinship_errors = check_kinship(arguments.kinship_file, samples)
+
     # Print summary
     if kinship_errors:
-        print "\n# WARNING: Kinship errors found."
+        print("\n# WARNING: Kinship errors found.")
     else:
-        print "\n# No kinship errors found."
+        print("\n# No kinship errors found.")
