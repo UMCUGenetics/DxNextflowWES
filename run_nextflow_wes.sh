@@ -10,13 +10,15 @@ email=$3
 mkdir -p $output && cd $output
 mkdir -p log
 
-if [ ! -f 'workflow.running' -a ! -f 'workflow.done '-a ! -f 'workflow.failed' ]; then
+if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
+touch workflow.running
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=24:00:00
 #SBATCH --nodes=1
 #SBATCH --mem 5G
 #SBATCH --gres=tmpspace:10G
+#SBATCH --job-name Nextflow_WES
 #SBATCH -o log/slurm_nextflow_wes.%j.out
 #SBATCH -e log/slurm_nextflow_wes.%j.err
 #SBATCH --mail-user $email
@@ -24,8 +26,6 @@ sbatch <<EOT
 set -euo pipefail
 
 module load Java/1.8.0_60
-
-touch workflow.running
 
 /hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
