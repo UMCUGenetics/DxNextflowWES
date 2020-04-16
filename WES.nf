@@ -45,7 +45,7 @@ def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
 // Define ped file, used in Kinship
 def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
 if (!ped_file.exists()) {
-    exit 1, "${ped_file.getName} not found in ${ped_file.getParent}."
+    exit 1, "ERROR: ${ped_file} not found."
 }
 
 workflow {
