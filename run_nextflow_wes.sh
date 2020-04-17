@@ -40,10 +40,10 @@ if [ \$? -eq 0 ]; then
     echo "Nextflow done."
 
     echo "Running Nextflow clean"
-    /hpc/diaggen/software/tools/nextflow clean -f -k
+    /hpc/diaggen/software/tools/nextflow clean -f -k -q
 
     echo "Zip work directory"
-    zip -rq work.zip work
+    zip -r -m -q work.zip work
 
     echo "Creating md5sum"
     find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
