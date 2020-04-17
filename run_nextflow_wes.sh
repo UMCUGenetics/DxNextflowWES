@@ -23,6 +23,7 @@ sbatch <<EOT
 #SBATCH -e log/slurm_nextflow_wes.%j.err
 #SBATCH --mail-user $email
 #SBATCH --mail-type FAIL
+#SBATCH --export=NONE
 set -euo pipefail
 
 module load Java/1.8.0_60
@@ -35,7 +36,7 @@ module load Java/1.8.0_60
 -profile slurm \
 -resume -ansi-log false
 
-if [ $? -eq 0 ]; then
+if [ \$? -eq 0 ]; then
     echo "Nextflow done."
 
     echo "Running Nextflow clean"
