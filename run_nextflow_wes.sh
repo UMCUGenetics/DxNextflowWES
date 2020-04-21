@@ -1,12 +1,12 @@
 #!/bin/bash
 # Set input and output dirs
-input=`realpath $1`
-output=`realpath $2`
+input=`realpath -m $1`
+output=`realpath -m $2`
 email=$3
 mkdir -p $output && cd $output
 mkdir -p log
 
-workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
+workflow_path='/hpc/diaggen/software/production/DxNextflowWES'
 
 sbatch <<EOT
 #!/bin/bash
