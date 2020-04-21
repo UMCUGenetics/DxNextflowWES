@@ -39,7 +39,6 @@ def analysis_id = params.outdir.split('/')[-1]
 def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
     .splitCsv(sep:'\t', skip:1)
     .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
-def exomedepth_models = ['HC', 'UMCU']
 def refset = 'Jan2020'
 
 workflow {
@@ -72,7 +71,7 @@ workflow {
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, refset]}.combine(exomedepth_models))
+    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, refset]})
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
@@ -150,17 +149,16 @@ process ExomeDepth {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-    tuple analysis_id, sample_id, file(bam_file), file(bai_file), refset, model
+    tuple analysis_id, sample_id, file(bam_file), file(bai_file), refset
 
     output:
-    tuple sample_id, model, refset, file("${model}*")
-    tuple sample_id, model, refset, file("${model}_${refset}_${sample_id}.bam_exome_calls.vcf") optional true
-    
+    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*vcf"), file("HC_${refset}_${sample_id}*vcf"), file("${sample_id}*xml"), file("UMCU_${refset}_${sample_id}*log"), file("HC_${refset}_${sample_id}*log"), file("UMCU_${refset}_${sample_id}*igv"), file("HC_${refset}_${sample_id}*igv")
+
     script:
     """
-    source ${params.exomedepth_path}/venv3.6/bin/activate
-    python ${params.exomedepth_path}/run_ExomeDepth.py -c --bam ${bam_file} --run $analysis_id --sample $sample_id --refset $refset --model $model
-    
+    source ${params.exomedepth_path}/venv/bin/activate
+    python ${params.exomedepth_path}/run_ExomeDepth.py -c --bam ${bam_file} --run $analysis_id --sample $sample_id --refset $refset    
+
     """
 }
 
