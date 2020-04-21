@@ -86,6 +86,6 @@ if __name__ == "__main__":
     kinship_errors = check_kinship(arguments.kinship_file, samples)
     # Print summary
     if kinship_errors:
-        print "\n# WARNING: Kinship errors found."
+        print("\n# WARNING: Kinship errors found.")
     else:
-        print "\n# No kinship errors found."
+        print("\n# No kinship errors found.")
