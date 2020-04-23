@@ -157,8 +157,7 @@ process ExomeDepth {
     script:
     """
     source ${params.exomedepth_path}/venv/bin/activate
-    python ${params.exomedepth_path}/run_ExomeDepth.py -c --bam ${bam_file} --run $analysis_id --sample $sample_id --refset $refset    
-
+    python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} $analysis_id $sample_id $refset
     """
 }
 
