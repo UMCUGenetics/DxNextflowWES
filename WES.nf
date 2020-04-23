@@ -36,10 +36,18 @@ include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
+
+// Define chromosomes used to scatter GATK_RealignerTargetCreator
 def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
     .splitCsv(sep:'\t', skip:1)
     .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
 def refset = 'Jan2020'
+
+// Define ped file, used in Kinship
+def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
+if (!ped_file.exists()) {
+    exit 1, "ERROR: ${ped_file} not found."
+}
 
 workflow {
     // Mapping
@@ -184,7 +192,7 @@ process Kinship {
     ${params.plink_path}/plink --file out --make-bed --noweb
     ${params.king_path}/king -b plink.bed --kinship
     cp king.kin0 ${analysis_id}.kinship
-    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${params.ped_folder}/${analysis_id}.ped > ${analysis_id}.kinship_check.out
+    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.kinship_check.out
     """
 }
 
@@ -192,7 +200,7 @@ process GetStatsFromFlagstat {
     // Custom process to run get_stats_from_flagstat.pl
     tag {"GetStatsFromFlagstat"}
     label 'GetStatsFromFlagstat'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     file(flagstat_files: "*")
@@ -202,7 +210,7 @@ process GetStatsFromFlagstat {
 
     script:
     """
-    perl ${baseDir}/assets/get_stats_from_flagstat.pl > run_stats.txt
+    python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
     """
 }
 
@@ -210,7 +218,7 @@ process CreateHSmetricsSummary {
     // Custom process to run get_stats_from_flagstat.pl
     tag {"CreateHSmetricsSummary"}
     label 'CreateHSmetricsSummary'
-    shell = ['/bin/bash', '-eo', 'pipefail']
+    shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
     file(hsmetrics_files: "*")
@@ -235,6 +243,7 @@ process TrendAnalysisTool {
 
     script:
     """
-    source ${params.trend_analysis_path}/venv/bin/activate && python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
+    source ${params.trend_analysis_path}/venv/bin/activate
+    python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
     """
 }

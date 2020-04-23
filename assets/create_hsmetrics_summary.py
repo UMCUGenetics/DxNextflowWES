@@ -5,7 +5,7 @@ import sys
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Create HSMetrics summary file')
-    parser.add_argument('hsmetrics_files', type=argparse.FileType('r'), nargs='*', help='PED file')
+    parser.add_argument('hsmetrics_files', type=argparse.FileType('r'), nargs='*', help='HSMetric file')
     arguments = parser.parse_args()
 
     interval_files_pattern = re.compile("BAIT_INTERVALS=\[(\S*)\].TARGET_INTERVALS=\[(\S*)\]")
