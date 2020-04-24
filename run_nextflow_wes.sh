@@ -4,8 +4,8 @@ set -euo pipefail
 workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
 
 # Set input and output dirs
-input=`realpath -m $1`
-output=`realpath -m $2`
+input=`realpath -e $1`
+output=`realpath $2`
 email=$3
 mkdir -p $output && cd $output
 mkdir -p log
