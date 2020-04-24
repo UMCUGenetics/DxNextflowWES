@@ -162,12 +162,12 @@ process ExomeDepth {
     tuple analysis_id, sample_id, file(bam_file), file(bai_file), refset
 
     output:
-    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*vcf"), file("HC_${refset}_${sample_id}*vcf"), file("${sample_id}*xml"), file("UMCU_${refset}_${sample_id}*log"), file("HC_${refset}_${sample_id}*log"), file("UMCU_${refset}_${sample_id}*igv"), file("HC_${refset}_${sample_id}*igv")
+    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*.vcf"), file("HC_${refset}_${sample_id}*.vcf"), file("${sample_id}*.xml"), file("UMCU_${refset}_${sample_id}*.log"), file("HC_${refset}_${sample_id}*.log"), file("UMCU_${refset}_${sample_id}*.igv"), file("HC_${refset}_${sample_id}*.igv")
 
     script:
     """
     source ${params.exomedepth_path}/venv/bin/activate
-    python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} $analysis_id $sample_id $refset
+    python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} ${refset}
     """
 }
 
