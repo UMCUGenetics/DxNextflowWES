@@ -26,7 +26,6 @@ sbatch <<EOT
 #SBATCH --mail-type FAIL
 #SBATCH --export=NONE
 #SBATCH --account=diaggen
-set -euo pipefail
 
 module load Java/1.8.0_60
 
