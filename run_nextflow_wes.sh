@@ -4,7 +4,7 @@ set -euo pipefail
 workflow_path='/hpc/diaggen/software/development/DxNextflowWES'
 
 # Set input and output dirs
-input=`realpath $1`
+input=`realpath -e $1`
 output=`realpath $2`
 email=$3
 mkdir -p $output && cd $output
@@ -12,6 +12,7 @@ mkdir -p log
 
 if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
 touch workflow.running
+
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=24:00:00

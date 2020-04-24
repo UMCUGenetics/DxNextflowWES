@@ -77,6 +77,9 @@ workflow {
     // ExonCov
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
+    // ExomeDepth
+    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, params.exomedepth_refset]})
+
     // Kinship
     Kinship(GATK_CombineVariants.out)
 
@@ -148,6 +151,26 @@ process ExonCov {
     python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} ${bam_file}
     """
 }
+
+process ExomeDepth {
+    // Custom process to run Exomedepth
+    tag {"ExomeDepth ${sample_id}"}
+    label 'ExomeDepth'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+    tuple analysis_id, sample_id, file(bam_file), file(bai_file), refset
+
+    output:
+    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*.vcf"), file("HC_${refset}_${sample_id}*.vcf"), file("${sample_id}*.xml"), file("UMCU_${refset}_${sample_id}*.log"), file("HC_${refset}_${sample_id}*.log"), file("UMCU_${refset}_${sample_id}*.igv"), file("HC_${refset}_${sample_id}*.igv")
+
+    script:
+    """
+    source ${params.exomedepth_path}/venv/bin/activate
+    python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} ${refset}
+    """
+}
+
 
 process Kinship {
     // Custom process to run Kinship tools
