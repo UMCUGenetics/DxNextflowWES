@@ -41,7 +41,6 @@ def analysis_id = params.outdir.split('/')[-1]
 def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
     .splitCsv(sep:'\t', skip:1)
     .map{type, chr, chr_len, md5, file -> [chr.minus('SN:')]}
-def refset = 'Jan2020'
 
 // Define ped file, used in Kinship
 def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
@@ -79,7 +78,7 @@ workflow {
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, refset]})
+    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, params.exomedepth_refset]})
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
