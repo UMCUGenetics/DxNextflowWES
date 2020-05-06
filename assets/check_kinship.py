@@ -12,9 +12,9 @@ def parse_ped(ped_file):
         # Create samples
         if sample not in samples:
             samples[sample] = {'family': family, 'parents': [], 'children': []}
-        if father not in samples:
+        if father != '0' and father not in samples:
             samples[father] = {'family': family, 'parents': [], 'children': []}
-        if mother not in samples:
+        if mother != '0' and mother not in samples:
             samples[mother] = {'family': family, 'parents': [], 'children': []}
 
         # Save sample relations
@@ -24,7 +24,6 @@ def parse_ped(ped_file):
         if mother != '0':
             samples[sample]['parents'].append(mother)
             samples[mother]['children'].append(sample)
-
     return samples
 
 
