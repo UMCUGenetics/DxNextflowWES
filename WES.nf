@@ -80,6 +80,9 @@ workflow {
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, params.exomedepth_refset]})
 
+    //Re_Annotate_CNV_VCF
+    Re_Annotate_CNV_VCF(ExomeDepth.out)
+
     // Kinship
     Kinship(GATK_CombineVariants.out)
 
@@ -171,6 +174,26 @@ process ExomeDepth {
     """
 }
 
+process Re_Annotate_CNV_VCF {
+    // Custom process to run Re_Annotate_CNV_VCF tool
+    tag {"Re_Annotate_CNV_VCF ${sample_id}"}
+    label 'Re_Annotate_CNV_VCF'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache false
+
+    input:
+    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*.vcf"), file("HC_${refset}_${sample_id}*.vcf")
+
+    output:
+    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*_ann.vcf"), file("HC_${refset}_${sample_id}*_ann.vcf")
+
+    script:
+    """
+    source ${params.exomedepth_path}/venv/bin/activate
+    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${"UMCU_${refset}_${sample_id}*.vcf"} ${ped_file}
+    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${"HC_${refset}_${sample_id}*.vcf"} ${ped_file}
+    """
+}
 
 process Kinship {
     // Custom process to run Kinship tools
@@ -186,7 +209,7 @@ process Kinship {
     tuple analysis_id, file(vcf_file), file(vcf_index)
 
     output:
-    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.kinship_check.out")
+    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.kinship_check.out"), file(${ped_file})
 
     script:
     """
