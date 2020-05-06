@@ -113,6 +113,9 @@ workflow {
             .groupTuple()
     )
 
+    //SavePedFile
+    SavePedFile() 
+
     // Repository versions
     VersionLog()
 }
@@ -179,19 +182,18 @@ process Re_Annotate_CNV_VCF {
     tag {"Re_Annotate_CNV_VCF ${sample_id}"}
     label 'Re_Annotate_CNV_VCF'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache false
 
     input:
-    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*.vcf"), file("HC_${refset}_${sample_id}*.vcf")
+    tuple sample_id, refset, file(umcu_vcf), file(hc_vcf)
 
     output:
-    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*_ann.vcf"), file("HC_${refset}_${sample_id}*_ann.vcf")
+    tuple sample_id, refset, file("${umcu_vcf.baseName}_ann.vcf"), file("${hc_vcf.baseName}_ann.vcf")
 
     script:
     """
     source ${params.exomedepth_path}/venv/bin/activate
-    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${"UMCU_${refset}_${sample_id}*.vcf"} ${ped_file}
-    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${"HC_${refset}_${sample_id}*.vcf"} ${ped_file}
+    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${umcu_vcf} ${ped_file}
+    python ${params.exomedepth_path}/reannotate_vcf_pedigree.py ${hc_vcf} ${ped_file}
     """
 }
 
@@ -209,7 +211,7 @@ process Kinship {
     tuple analysis_id, file(vcf_file), file(vcf_index)
 
     output:
-    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.kinship_check.out"), file(${ped_file})
+    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.kinship_check.out")
 
     script:
     """
@@ -272,6 +274,21 @@ process TrendAnalysisTool {
     python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
     """
 }
+
+process SavePedFile {
+    tag {"SavePedFile ${analysis_id}"}
+    label 'SavePedFile'
+    shell = ['/bin/bash', '-euo', 'pipefail']
+
+    output:
+    file("*.ped")
+
+    script:
+    """
+    cp ${ped_file} ./
+    """
+}
+
 
 process VersionLog {
     // Custom process to log repository versions
