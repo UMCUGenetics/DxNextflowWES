@@ -110,6 +110,9 @@ workflow {
             .groupTuple()
     )
 
+    //SavePedFile
+    SavePedFile() 
+
     // Repository versions
     VersionLog()
 }
@@ -247,6 +250,20 @@ process TrendAnalysisTool {
     """
     source ${params.trend_analysis_path}/venv/bin/activate
     python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
+    """
+}
+
+process SavePedFile {
+    tag {"SavePedFile ${analysis_id}"}
+    label 'SavePedFile'
+    shell = ['/bin/bash', '-euo', 'pipefail']
+
+    output:
+    file("*.ped")
+
+    script:
+    """
+    cp ${ped_file} ./
     """
 }
 
