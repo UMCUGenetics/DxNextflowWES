@@ -50,7 +50,7 @@ def check_kinship(kinship_file, samples):
                     print_kinship(sample_1, sample_2, kinship, True, 'parent_child', 'FAIL')
                     kinship_errors = True
             # Parent - Parent -> both samples have the same children
-            elif samples[sample_1]['children'] == samples[sample_2]['children']:
+            elif samples[sample_1]['children'] and samples[sample_1]['children'] == samples[sample_2]['children']:
                 if kinship <= kinship_setting[0]:
                     print_kinship(sample_1, sample_2, kinship, True, 'parent_parent', 'OK')
                 else:
