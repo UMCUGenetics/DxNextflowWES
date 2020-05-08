@@ -16,7 +16,7 @@ if __name__ == "__main__":
     }
 
     for flagstat_file in arguments.flagstat_files:
-        print("wokring on {0}...".format(flagstat_file.name))
+        print("working on {0}...".format(flagstat_file.name))
 
         for line in flagstat_file:
             line = line.strip()
