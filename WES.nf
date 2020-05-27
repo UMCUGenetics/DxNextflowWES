@@ -211,7 +211,7 @@ process GetStatsFromFlagstat {
     output:
         path('run_stats.txt')
 
-        script:
+    script:
         """
         python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
         """
