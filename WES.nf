@@ -94,14 +94,12 @@ workflow {
     Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
-    MultiQC(
-        Channel.empty().mix(
-            FastQC.out.flatten().map{file -> [analysis_id, file]},
-            PICARD_CollectMultipleMetrics.out.flatten().map{file -> [analysis_id, file]},
-            PICARD_EstimateLibraryComplexity.out.map{file -> [analysis_id, file]},
-            PICARD_CollectHsMetrics.out.map{file -> [analysis_id, file]}
-        ).groupTuple()
-    )
+    MultiQC(analysis_id, Channel.empty().mix(
+        FastQC.out.collect(),
+        PICARD_CollectMultipleMetrics.out.collect(),
+        PICARD_EstimateLibraryComplexity.out.collect(),
+        PICARD_CollectHsMetrics.out.collect()
+    ))
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
@@ -111,7 +109,7 @@ workflow {
     )
 
     //SavePedFile
-    SavePedFile() 
+    SavePedFile()
 
     // Repository versions
     VersionLog()
@@ -146,13 +144,13 @@ process ExonCov {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-    tuple analysis_id, sample_id, file(bam_file), file(bai_file)
+        tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
     script:
-    """
-    source ${params.exoncov_path}/venv/bin/activate
-    python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} ${bam_file}
-    """
+        """
+        source ${params.exoncov_path}/venv/bin/activate
+        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} ${bam_file}
+        """
 }
 
 process ExomeDepth {
@@ -162,16 +160,16 @@ process ExomeDepth {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-    tuple analysis_id, sample_id, file(bam_file), file(bai_file), refset
+        tuple(analysis_id, sample_id, path(bam_file), path(bai_file), refset)
 
     output:
-    tuple sample_id, refset, file("UMCU_${refset}_${sample_id}*.vcf"), file("HC_${refset}_${sample_id}*.vcf"), file("${sample_id}*.xml"), file("UMCU_${refset}_${sample_id}*.log"), file("HC_${refset}_${sample_id}*.log"), file("UMCU_${refset}_${sample_id}*.igv"), file("HC_${refset}_${sample_id}*.igv")
+        tuple(sample_id, refset, path("UMCU_${refset}_${sample_id}*.vcf"), path("HC_${refset}_${sample_id}*.vcf"), path("${sample_id}*.xml"), path("UMCU_${refset}_${sample_id}*.log"), path("HC_${refset}_${sample_id}*.log"), path("UMCU_${refset}_${sample_id}*.igv"), path("HC_${refset}_${sample_id}*.igv"))
 
     script:
-    """
-    source ${params.exomedepth_path}/venv/bin/activate
-    python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} ${refset}
-    """
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} ${refset}
+        """
 }
 
 
@@ -186,19 +184,19 @@ process Kinship {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-    tuple analysis_id, file(vcf_file), file(vcf_index)
+        tuple(analysis_id, path(vcf_file), path(vcf_index))
 
     output:
-    tuple analysis_id, file("${analysis_id}.kinship"), file("${analysis_id}.kinship_check.out")
+        tuple(analysis_id, path("${analysis_id}.kinship"), path("${analysis_id}.kinship_check.out"))
 
     script:
-    """
-    ${params.vcftools_path}/vcftools --vcf ${vcf_file} --plink
-    ${params.plink_path}/plink --file out --make-bed --noweb
-    ${params.king_path}/king -b plink.bed --kinship
-    cp king.kin0 ${analysis_id}.kinship
-    python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.kinship_check.out
-    """
+        """
+        ${params.vcftools_path}/vcftools --vcf ${vcf_file} --plink
+        ${params.plink_path}/plink --file out --make-bed --noweb
+        ${params.king_path}/king -b plink.bed --kinship
+        cp king.kin0 ${analysis_id}.kinship
+        python ${baseDir}/assets/check_kinship.py ${analysis_id}.kinship ${ped_file} > ${analysis_id}.kinship_check.out
+        """
 }
 
 process GetStatsFromFlagstat {
@@ -208,15 +206,15 @@ process GetStatsFromFlagstat {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-    file(flagstat_files: "*")
+        path(flagstat_files)
 
     output:
-    file('run_stats.txt')
+        path('run_stats.txt')
 
     script:
-    """
-    python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
-    """
+        """
+        python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
+        """
 }
 
 process CreateHSmetricsSummary {
@@ -226,15 +224,15 @@ process CreateHSmetricsSummary {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-    file(hsmetrics_files: "*")
+        path(hsmetrics_files)
 
     output:
-    file('HSMetrics_summary.txt')
+        path('HSMetrics_summary.txt')
 
     script:
-    """
-    python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
-    """
+        """
+        python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
+        """
 }
 
 process TrendAnalysisTool {
@@ -244,13 +242,13 @@ process TrendAnalysisTool {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-    tuple analysis_id, file(input_files: "*")
+        tuple(analysis_id, path(input_files))
 
     script:
-    """
-    source ${params.trend_analysis_path}/venv/bin/activate
-    python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
-    """
+        """
+        source ${params.trend_analysis_path}/venv/bin/activate
+        python ${params.trend_analysis_path}/trend_analysis.py upload processed_data ${analysis_id} .
+        """
 }
 
 process SavePedFile {
@@ -259,12 +257,12 @@ process SavePedFile {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     output:
-    file("*.ped")
+        path("*.ped")
 
     script:
-    """
-    cp ${ped_file} ./
-    """
+        """
+        cp ${ped_file} ./
+        """
 }
 
 process VersionLog {
@@ -274,23 +272,23 @@ process VersionLog {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     output:
-    file('repository_version.log')
+        path('repository_version.log')
 
     script:
-    """
-    echo 'DxNextflowWes' > repository_version.log
-    git --git-dir=${workflow.projectDir}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+        """
+        echo 'DxNextflowWes' > repository_version.log
+        git --git-dir=${workflow.projectDir}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
-    echo 'Dx_tracks' >> repository_version.log
-    git --git-dir=${params.dxtracks_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+        echo 'Dx_tracks' >> repository_version.log
+        git --git-dir=${params.dxtracks_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
-    echo 'ExonCov' >> repository_version.log
-    git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+        echo 'ExonCov' >> repository_version.log
+        git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
-    echo 'ExomeDepth' >> repository_version.log
-    git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+        echo 'ExomeDepth' >> repository_version.log
+        git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
-    echo 'TrendAnalysis' >> repository_version.log
-    git --git-dir=${params.trend_analysis_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-    """
+        echo 'TrendAnalysis' >> repository_version.log
+        git --git-dir=${params.trend_analysis_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+        """
 }
