@@ -27,8 +27,7 @@ def parse_ped(ped_file):
     return samples
 
 
-def check_kinship(kinship_file, samples):
-    kinship_setting = [0.177, 0.354]
+def check_kinship(kinship_file, samples, kinship_setting):
     kinship_errors = False
     print_kinship('sample_1', 'sample_2', 'kinship', 'related', 'type', 'status')  # header
     for line in kinship_file:
@@ -83,12 +82,16 @@ if __name__ == "__main__":
     parser.add_argument('ped_file', type=argparse.FileType('r'), help='PED file')
     arguments = parser.parse_args()
 
+    # settings
+    kinship_setting = [0.177, 0.354]
+
     # Parse ped file and check kinship
     samples = parse_ped(arguments.ped_file)
-    kinship_errors = check_kinship(arguments.kinship_file, samples)
+    kinship_errors = check_kinship(arguments.kinship_file, samples, kinship_setting)
 
     # Print summary
     if kinship_errors:
         print("\n# WARNING: Kinship errors found.")
     else:
         print("\n# No kinship errors found.")
+    print("# Used kinship check settings: {0}".format(kinship_setting))
