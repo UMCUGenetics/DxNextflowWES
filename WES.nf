@@ -4,8 +4,7 @@ nextflow.preview.dsl=2
 include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
 
 // Mapping modules
-include MEM as BWA_MEM from './NextflowModules/BWA/0.7.17/MEM.nf' params(genome:"$params.genome", optional: '-c 100 -M')
-include ViewSort as Sambamba_ViewSort from './NextflowModules/Sambamba/0.7.0/ViewSort.nf'
+include BWAMapping from './NextflowModules/BWA-Mapping/bwa-0.7.17_samtools-1.9/Mapping.nf' params(genome_fasta: "$params.genome", optional: '-c 100 -M')
 include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
 
 // IndelRealignment modules
@@ -50,10 +49,9 @@ if (!ped_file.exists()) {
 
 workflow {
     // Mapping
-    BWA_MEM(fastq_files)
-    Sambamba_ViewSort(BWA_MEM.out)
+    BWAMapping(fastq_files)
     Sambamba_MarkdupMerge(
-        Sambamba_ViewSort.out.map{
+        BWAMapping.out.map{
             sample_id, rg_id, bam_file, bai_file -> [sample_id, bam_file]
         }.groupTuple()
     )
