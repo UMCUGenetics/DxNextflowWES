@@ -40,11 +40,11 @@ module load Java/1.8.0_60
 if [ \$? -eq 0 ]; then
     echo "Nextflow done."
 
-    echo "Running Nextflow clean"
-    /hpc/diaggen/software/tools/nextflow clean -f -k -q
-
     echo "Zip work directory"
-    zip -r -m -q work.zip work
+    find work -type f | egrep "\.(command|exitcode)" | zip -@ -q work.zip
+
+    echo "Remove work directory"
+    rm -r work
 
     echo "Creating md5sum"
     find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
