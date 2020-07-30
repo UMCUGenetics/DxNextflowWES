@@ -17,6 +17,11 @@ curl -s https://get.nextflow.io | bash
 nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> [-profile slurm|mac]
 ```
 
+#### Running WES Fingerprint workflow
+```bash
+nextflow run WES_Fingerprint.nf -c WES.config --bam_path <bam_dir_path> --outdir <output_dir_path> [-profile slurm|mac]
+```
+
 #### Create Kinship container
 ```bash
 guixr pack -f squashfs -RR -S /bin=bin king plink-ng vcftools@0.1.14 bash glibc-utf8-locales tzdata coreutils procps grep sed bootstrap-binaries
