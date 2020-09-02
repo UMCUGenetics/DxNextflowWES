@@ -76,8 +76,8 @@ workflow {
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
-    CreateEDmetricsSummary(ExomeDepth.out.HC_exomeDepth_log.collect())
+    ExomeDepth(Sambamba_Merge.out)
+    CreateEDmetricsSummary(analysis_id, ExomeDepth.out.HC_log.collect())
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
@@ -89,7 +89,6 @@ workflow {
     PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
     PICARD_CollectHsMetrics(Sambamba_Merge.out)
     CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
-
 
     Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
@@ -164,8 +163,8 @@ process ExomeDepth {
 
     output:
         tuple(sample_id, path("UMCU_*_${sample_id}*.vcf"), path("HC_*_${sample_id}*.vcf"), path("${sample_id}*.xml"), path("UMCU_*_${sample_id}*.log"), path("HC_*_${sample_id}*.log"), path("UMCU_*_${sample_id}*.igv"), path("HC_*_${sample_id}*.igv"),path("HC_${sample_id}_stats.log"), path("UMCU_${sample_id}_stats.log"))
-        path 'HC_*_stats.log', emit: HC_exomeDepth_log
-        path 'UMCU_*_stats.log', emit: UMCU_exomeDepth_log
+        path('HC_${sample_id}_stats.log', emit: HC_log)
+        path('UMCU_${sample_id}_stats.log', emit: UMCU_log)
 
     script:
         """
@@ -181,14 +180,15 @@ process CreateEDmetricsSummary {
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
-        path(exomedepth_files)
+        val(analysis_id)
+        path(exomedepth_logs)
 
     output:
         path("${analysis_id}_exomedepth_summary.txt")
 
     script:
         """
-        python ${baseDir}/assets/create_exomedepth_summary.py ${exomedepth_files}  > ${analysis_id}_exomedepth_summary.txt
+        python ${baseDir}/assets/create_exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
         """
 }
 
