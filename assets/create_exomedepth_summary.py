@@ -17,7 +17,7 @@ if __name__ == "__main__":
             stats_dic["CR"]+=[correlation]
             stats_dic["PD"]+=[deldupratio]
             stats_dic["TC"]+=[totalcount]
-            print("{sample};MODEL={model};CR={correl};PD={deldupratio};TC={totalcount}\r".format(
+            print("{sample};CM={model};CR={correl};PD={deldupratio};TC={totalcount}\r".format(
                  sample=splitline[0],
                  model=splitline[1],
                  correl="%.4f" % correlation,
