@@ -17,7 +17,7 @@ if __name__ == "__main__":
             stats_dic["CR"]+=[correlation]
             stats_dic["DP"]+=[deldupratio]
             stats_dic["TC"]+=[totalcount]
-            print("{sample};\tMODEL={model};\tCR={correl};\tDP={deldupratio};\tTC={totalcount}\r".format(
+            print("{sample};MODEL={model};CR={correl};DP={deldupratio};TC={totalcount}\r".format(
                  sample=splitline[0],
                  model=splitline[1],
                  correl="%.4f" % correlation,
@@ -26,10 +26,10 @@ if __name__ == "__main__":
                  )),
      
     print("\r")
-    print("# Average_CR={}\r".format("%.4f" % statistics.mean(stats_dic["CR"]))),
-    print("# Average_DP={}\r".format("%.2f" % statistics.mean(stats_dic["DP"]))),
-    print("# Average_TC={}\r".format("%.2f" % statistics.mean(stats_dic["TC"]))),
+    print("#Average_CR={}\r".format("%.4f" % statistics.mean(stats_dic["CR"]))),
+    print("#Average_DP={}\r".format("%.2f" % statistics.mean(stats_dic["DP"]))),
+    print("#Average_TC={}\r".format("%.2f" % statistics.mean(stats_dic["TC"]))),
     print("\r")
-    print("# Median_CR={}\r".format("%.4f" % statistics.median(stats_dic["CR"]))),
-    print("# Median_DP={}\r".format("%.2f" % statistics.median(stats_dic["DP"]))),
-    print("# Median_TC={}\r".format("%.2f" % statistics.median(stats_dic["TC"]))),
+    print("#Median_CR={}\r".format("%.4f" % statistics.median(stats_dic["CR"]))),
+    print("#Median_DP={}\r".format("%.2f" % statistics.median(stats_dic["DP"]))),
+    print("#Median_TC={}\r".format("%.2f" % statistics.median(stats_dic["TC"]))),
