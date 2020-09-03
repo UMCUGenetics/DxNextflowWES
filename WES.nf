@@ -76,7 +76,7 @@ workflow {
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out)
+    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     CreateEDmetricsSummary(analysis_id, ExomeDepth.out.HC_log.collect())
 
     // Kinship
@@ -162,9 +162,9 @@ process ExomeDepth {
         tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
     output:
-        tuple(sample_id, path("UMCU_*_${sample_id}*.vcf"), path("HC_*_${sample_id}*.vcf"), path("${sample_id}*.xml"), path("UMCU_*_${sample_id}*.log"), path("HC_*_${sample_id}*.log"), path("UMCU_*_${sample_id}*.igv"), path("HC_*_${sample_id}*.igv"),path("HC_${sample_id}_stats.log"), path("UMCU_${sample_id}_stats.log"))
-        path('HC_${sample_id}_stats.log', emit: HC_log)
-        path('UMCU_${sample_id}_stats.log', emit: UMCU_log)
+        tuple(sample_id, path("UMCU_*.vcf"), path("HC_*.vcf"), path("*.xml"), path("UMCU_*.log"), path("HC_*.log"), path("UMCU_*.igv"), path("HC_*.igv"),path("HC_*_stats.log"), path("UMCU_*_stats.log"))
+        path('HC_*_stats.log', emit: HC_log)
+        path('UMCU_*_stats.log', emit: UMCU_log)
 
     script:
         """
@@ -188,7 +188,7 @@ process CreateEDmetricsSummary {
 
     script:
         """
-        python ${baseDir}/assets/create_exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
+        python3 ${baseDir}/assets/create_exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
         """
 }
 
