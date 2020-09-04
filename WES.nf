@@ -77,7 +77,7 @@ workflow {
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
-    CreateEDmetricsSummary(analysis_id, ExomeDepth.out.HC_log.collect())
+    ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
@@ -162,9 +162,14 @@ process ExomeDepth {
         tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
     output:
-        tuple(sample_id, path("UMCU_*.vcf"), path("HC_*.vcf"), path("*.xml"), path("UMCU_*.log"), path("HC_*.log"), path("UMCU_*.igv"), path("HC_*.igv"),path("HC_*_stats.log"), path("UMCU_*_stats.log"))
-        path('HC_*_stats.log', emit: HC_log)
-        path('UMCU_*_stats.log', emit: UMCU_log)
+        path("*.xml", emit: ED_xml)
+        path("*.log", emit: ED_log)
+        path("HC_*.igv", emit: HC_igv)
+        path("UMCU_*.igv", emit: UMCU_igv)
+        path("HC_*.vcf", emit: HC_vcf)
+        path("UMCU_*.vcf", emit: UMCU_vcf)
+        path('HC_*_stats.log', emit: HC_stats_log)
+        path('UMCU_*_stats.log', emit: UMCU_stats_log)
 
     script:
         """
@@ -173,10 +178,10 @@ process ExomeDepth {
         """
 }
 
-process CreateEDmetricsSummary {
+process ExomeDepthSummary {
     // Custom process to stats from ExomeDepth analysis
-    tag {"CreateEDmetricsSummary"}
-    label 'CreateEDmetricsSummary'
+    tag {"ExomeDepthSummary"}
+    label 'ExomeDepthSummary'
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
@@ -188,7 +193,7 @@ process CreateEDmetricsSummary {
 
     script:
         """
-        python3 ${baseDir}/assets/create_exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
+        python3 ${params.exomedepth_path}/ExomeDepth/exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
         """
 }
 
