@@ -193,7 +193,8 @@ process ExomeDepthSummary {
 
     script:
         """
-        python3 ${params.exomedepth_path}/exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
         """
 }
 
