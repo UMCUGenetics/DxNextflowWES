@@ -94,11 +94,11 @@ workflow {
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
     MultiQC(analysis_id, Channel.empty().mix(
-        FastQC.out.collect(),
-        PICARD_CollectMultipleMetrics.out.collect(),
-        PICARD_EstimateLibraryComplexity.out.collect(),
-        PICARD_CollectHsMetrics.out.collect()
-    ))
+        FastQC.out,
+        PICARD_CollectMultipleMetrics.out,
+        PICARD_EstimateLibraryComplexity.out,
+        PICARD_CollectHsMetrics.out
+    ).collect())
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
