@@ -182,7 +182,7 @@ process ExomeDepthSummary {
     // Custom process to stats from ExomeDepth analysis
     tag {"ExomeDepthSummary"}
     label 'ExomeDepthSummary'
-    shell = ['/bin/bash', '-euo', 'pipefail']
+    shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
         val(analysis_id)
