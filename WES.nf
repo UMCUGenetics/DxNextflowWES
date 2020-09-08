@@ -76,7 +76,8 @@ workflow {
     ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file, params.exomedepth_refset]})
+    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
@@ -158,15 +159,42 @@ process ExomeDepth {
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
-        tuple(analysis_id, sample_id, path(bam_file), path(bai_file), refset)
+        tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
     output:
-        tuple(sample_id, refset, path("UMCU_${refset}_${sample_id}*.vcf"), path("HC_${refset}_${sample_id}*.vcf"), path("${sample_id}*.xml"), path("UMCU_${refset}_${sample_id}*.log"), path("HC_${refset}_${sample_id}*.log"), path("UMCU_${refset}_${sample_id}*.igv"), path("HC_${refset}_${sample_id}*.igv"))
+        path("*.xml", emit: ED_xml)
+        path("*.log", emit: ED_log)
+        path("HC_*.igv", emit: HC_igv)
+        path("UMCU_*.igv", emit: UMCU_igv)
+        path("HC_*.vcf", emit: HC_vcf)
+        path("UMCU_*.vcf", emit: UMCU_vcf)
+        path('HC_*_stats.log', emit: HC_stats_log)
+        path('UMCU_*_stats.log', emit: UMCU_stats_log)
 
     script:
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} ${refset}
+        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} 
+        """
+}
+
+process ExomeDepthSummary {
+    // Custom process to stats from ExomeDepth analysis
+    tag {"ExomeDepthSummary"}
+    label 'ExomeDepthSummary'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        val(analysis_id)
+        path(exomedepth_logs)
+
+    output:
+        path("${analysis_id}_exomedepth_summary.txt")
+
+    script:
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/exomedepth_summary.py ${exomedepth_logs}  > ${analysis_id}_exomedepth_summary.txt
         """
 }
 
