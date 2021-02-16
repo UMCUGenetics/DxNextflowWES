@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-workflow_path='/home/cog/edejong2/repos/DxNextflowWES/'
+workflow_path='/home/cog/edejong2/repos/DxNextflowWES'
 
 # Set input and output dirs
 input=`realpath -e $1`
