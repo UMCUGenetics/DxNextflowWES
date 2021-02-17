@@ -32,6 +32,7 @@ include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './Ne
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.dxtracks_path/$params.picard_bait", target:"$params.dxtracks_path/$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
 include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
 include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
+include CheckContamination from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_0/CheckContamination.nf'
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -61,6 +62,9 @@ workflow {
     GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
     Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
     Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
+
+    // VerifyBamID CheckContamination
+    CheckContamination(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().)
 
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
@@ -97,7 +101,8 @@ workflow {
         FastQC.out,
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out
+        PICARD_CollectHsMetrics.out,
+        CheckContamination.out.map{sample_id, self_sm, contamination_float -> [sample_id, self_sm]},
     ).collect())
 
     TrendAnalysisTool(
