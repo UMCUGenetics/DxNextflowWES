@@ -94,7 +94,7 @@ workflow {
     Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
-    CheckContamination(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple())
+    CheckContamination(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple())
 
     MultiQC(analysis_id, Channel.empty().mix(
         FastQC.out,
