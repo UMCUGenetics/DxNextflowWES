@@ -101,7 +101,7 @@ workflow {
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out,
-        CheckContamination.out.map{sample_id, self_sm, contamination_float -> [sample_id, self_sm]},
+        //CheckContamination.out.map{sample_id, self_sm, contamination_float -> [sample_id, self_sm]},
     ).collect())
 
     TrendAnalysisTool(
