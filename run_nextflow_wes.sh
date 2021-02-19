@@ -40,14 +40,14 @@ module load Java/1.8.0_60
 if [ \$? -eq 0 ]; then
     echo "Nextflow done."
 
-    echo "Zip work directory"
-    find work -type f | egrep "\.(command|exitcode)" | zip -@ -q work.zip
+    # echo "Zip work directory"
+    # find work -type f | egrep "\.(command|exitcode)" | zip -@ -q work.zip
 
-    echo "Remove work directory"
-    rm -r work
+    # echo "Remove work directory"
+    # rm -r work
 
-    echo "Creating md5sum"
-    find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
+    # echo "Creating md5sum"
+    # find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
 
     echo "WES workflow completed successfully."
     rm workflow.running
