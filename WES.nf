@@ -104,7 +104,7 @@ workflow {
         CheckContamination.out.map{sample_id, self_sm, contamination_float -> [self_sm]}
     ).collect())
 
-    CheckContamination.out.groupTuple()view()
+    CheckContamination.out.groupTuple().view()
 // Test output by viewing it.
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
