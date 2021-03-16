@@ -174,7 +174,7 @@ process ExomeDepth {
     script:
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} 
+        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id}
         """
 }
 
@@ -281,6 +281,7 @@ process SavePedFile {
     tag {"SavePedFile ${analysis_id}"}
     label 'SavePedFile'
     shell = ['/bin/bash', '-euo', 'pipefail']
+    cache = false  //Disable cache to force a new ped file copy when restarting the workflow.
 
     output:
         path("*.ped")
@@ -296,6 +297,7 @@ process VersionLog {
     tag {"VersionLog ${analysis_id}"}
     label 'VersionLog'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false  //Disable cache to force a new version log when restarting the workflow.
 
     output:
         path('repository_version.log')
