@@ -15,13 +15,13 @@ touch workflow.running
 
 sbatch <<EOT
 #!/bin/bash
-#SBATCH --time=24:00:00
+#SBATCH --time=2:00:00
 #SBATCH --nodes=1
 #SBATCH --mem 5G
 #SBATCH --gres=tmpspace:10G
-#SBATCH --job-name Nextflow_WES
-#SBATCH -o log/slurm_nextflow_wes.%j.out
-#SBATCH -e log/slurm_nextflow_wes.%j.err
+#SBATCH --job-name Nextflow_WES_Fingerprint
+#SBATCH -o log/slurm_nextflow_wes_fingerprint.%j.out
+#SBATCH -e log/slurm_nextflow_wes_fingerprint.%j.err
 #SBATCH --mail-user $email
 #SBATCH --mail-type FAIL
 #SBATCH --export=NONE
@@ -29,9 +29,9 @@ sbatch <<EOT
 
 module load Java/1.8.0_60
 
-/hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
+/hpc/diaggen/software/tools/nextflow run $workflow_path/WES_Fingerprint.nf \
 -c $workflow_path/WES.config \
---fastq_path $input \
+--bam_path $input \
 --outdir $output \
 --email $email \
 -profile slurm \
@@ -46,10 +46,7 @@ if [ \$? -eq 0 ]; then
     echo "Remove work directory"
     rm -r work
 
-    echo "Creating md5sum"
-    find -type f -not -iname 'md5sum.txt' -exec md5sum {} \; > md5sum.txt
-
-    echo "WES workflow completed successfully."
+    echo "WES Fingerprint workflow completed successfully."
     rm workflow.running
     touch workflow.done
 
