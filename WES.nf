@@ -148,7 +148,7 @@ process ExonCov {
     script:
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} ${bam_file}
+        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
         """
 }
 
