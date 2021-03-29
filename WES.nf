@@ -101,7 +101,7 @@ workflow {
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm, ancestry_PC -> [self_sm]}
+        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
     ).collect())
 
 
