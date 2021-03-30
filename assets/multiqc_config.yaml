@@ -53,3 +53,8 @@ table_cond_formatting_rules:
             - lt: 5
         fail:
             - gt: 5
+    FREEMIX:
+        pass:
+            - lt: 5
+        fail:
+            - gt: 5
