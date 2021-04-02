@@ -32,7 +32,7 @@ include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './Ne
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.dxtracks_path/$params.picard_bait", target:"$params.dxtracks_path/$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
 include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
 include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
-include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_0/VerifyBamID2.nf'
+include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
