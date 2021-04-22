@@ -31,7 +31,7 @@ include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './Nextflow
 include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf' params(optional:"OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500")
 include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.dxtracks_path/$params.picard_bait", target:"$params.dxtracks_path/$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
 include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
-include MultiQC from './NextflowModules/MultiQC/1.8/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
+include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -148,7 +148,7 @@ process ExonCov {
     script:
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} ${bam_file}
+        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
         """
 }
 
@@ -174,7 +174,7 @@ process ExomeDepth {
     script:
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id} 
+        python ${params.exomedepth_path}/run_ExomeDepth.py callcnv ./ ${bam_file} ${analysis_id} ${sample_id}
         """
 }
 
@@ -281,6 +281,7 @@ process SavePedFile {
     tag {"SavePedFile ${analysis_id}"}
     label 'SavePedFile'
     shell = ['/bin/bash', '-euo', 'pipefail']
+    cache = false  //Disable cache to force a new ped file copy when restarting the workflow.
 
     output:
         path("*.ped")
@@ -296,6 +297,7 @@ process VersionLog {
     tag {"VersionLog ${analysis_id}"}
     label 'VersionLog'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false  //Disable cache to force a new version log when restarting the workflow.
 
     output:
         path('repository_version.log')
