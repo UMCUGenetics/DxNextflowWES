@@ -80,7 +80,7 @@ workflow {
     ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
-    Kinship(GATK_CombineVariants.out)
+    // Kinship(GATK_CombineVariants.out)
 
     // QC
     FastQC(fastq_files)
@@ -100,12 +100,12 @@ workflow {
         PICARD_CollectHsMetrics.out
     ).collect())
 
-    TrendAnalysisTool(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
+    // TrendAnalysisTool(
+    //     GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //         .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //         .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //         .groupTuple()
+    // )
 
     //SavePedFile
     SavePedFile()
