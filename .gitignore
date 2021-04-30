@@ -7,3 +7,6 @@ tools
 files
 wes_out
 fingerprint_out
+
+# VSCode
+.vscode/
