@@ -10,11 +10,11 @@ include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0
 // HaplotypeCaller modules
 include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"500", optional: "")
 include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/4.2.0.0/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
-include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/VariantFiltration.nf' params(
+include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModules/GATK/4.2.0.0/VariantFiltration.nf' params(
     gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
 )
-include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--assumeIdenticalSamples")
-include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
+include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
+include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/4.2.0.0/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
 
 // Fingerprint modules
 include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--intervals $params.dxtracks_path/$params.fingerprint_target --output_mode EMIT_ALL_SITES")
@@ -61,8 +61,8 @@ workflow {
     PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
     GATK_HaplotypeCaller(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
-    GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
-    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
+    GATK_MergeVcfs(GATK_VariantFiltration.out.groupTuple())
+    GATK_SingleSampleVCF(GATK_MergeVcfs.out.combine(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
 
     // GATK UnifiedGenotyper (fingerprint)
     // GATK_UnifiedGenotyper(Sambamba_Merge.out)
@@ -75,7 +75,7 @@ workflow {
     // ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
-    Kinship(GATK_CombineVariants.out)
+    Kinship(GATK_MergeVcfs.out)
 
     // QC
     // FastQC(fastq_files)
@@ -99,7 +99,7 @@ workflow {
     // ).collect())
 
     // TrendAnalysisTool(
-    //     GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //     GATK_MergeVcfs.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
     //         .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
     //         .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
     //         .groupTuple()
