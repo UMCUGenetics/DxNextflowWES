@@ -7,15 +7,9 @@ include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
 include BWAMapping from './NextflowModules/BWA-Mapping/bwa-0.7.17_samtools-1.9/Mapping.nf' params(genome_fasta: "$params.genome", optional: '-c 100 -M')
 include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
 
-// IndelRealignment modules
-include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/RealignerTargetCreator.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_rtc_options")
-include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
-include ViewUnmapped as Sambamba_ViewUnmapped from './NextflowModules/Sambamba/0.7.0/ViewUnmapped.nf'
-include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
-
 // HaplotypeCaller modules
 include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"500", optional: "")
-include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
+include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/4.2.0.0/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
 include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/VariantFiltration.nf' params(
     gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
 )
@@ -57,59 +51,59 @@ workflow {
         }.groupTuple()
     )
 
-    // GATK IndelRealigner
-    GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
-    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
-    Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
-    Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
+    // GATK IndelRealigner -> replace with BQSR?
+    // GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    // GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
+    // Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
+    // Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
-    GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
+    GATK_HaplotypeCaller(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
-    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
+    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
 
     // GATK UnifiedGenotyper (fingerprint)
-    GATK_UnifiedGenotyper(Sambamba_Merge.out)
+    // GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // ExonCov
-    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    // ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
-    ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
+    // ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    // ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
 
     // QC
-    FastQC(fastq_files)
+    // FastQC(fastq_files)
 
-    PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
-    PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
-    PICARD_CollectHsMetrics(Sambamba_Merge.out)
-    CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
+    // PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
+    // PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
+    // PICARD_CollectHsMetrics(Sambamba_Merge.out)
+    // CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
 
-    Sambamba_Flagstat(Sambamba_Merge.out)
-    GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
+    // Sambamba_Flagstat(Sambamba_Merge.out)
+    // GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
-    VerifyBamID2(Sambamba_Merge.out.groupTuple())
+    // VerifyBamID2(Sambamba_Merge.out.groupTuple())
 
-    MultiQC(analysis_id, Channel.empty().mix(
-        FastQC.out,
-        PICARD_CollectMultipleMetrics.out,
-        PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
-    ).collect())
+    // MultiQC(analysis_id, Channel.empty().mix(
+    //     FastQC.out,
+    //     PICARD_CollectMultipleMetrics.out,
+    //     PICARD_EstimateLibraryComplexity.out,
+    //     PICARD_CollectHsMetrics.out,
+    //     VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
+    // ).collect())
 
-    TrendAnalysisTool(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
+    // TrendAnalysisTool(
+    //     GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //         .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //         .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //         .groupTuple()
+    // )
 
     //SavePedFile
     SavePedFile()
