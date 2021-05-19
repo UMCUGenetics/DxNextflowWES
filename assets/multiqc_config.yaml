@@ -86,6 +86,8 @@ table_columns_visible:
         summed_median: True
         summed_mean: False
         PERCENT_DUPLICATION: True
+    VerifyBAMID:
+        FREEMIX: True
 
 table_cond_formatting_rules:
     mqc-generalstats-picard-PCT_TARGET_BASES_20X:
@@ -95,3 +97,15 @@ table_cond_formatting_rules:
             - lt: 96
         fail:
             - lt: 95
+    mqc-generalstats-verifybamid-FREEMIX:
+        pass:
+            - lt: 5
+            - eq: 5
+        fail:
+            - gt: 5
+    FREEMIX:
+        pass:
+            - lt: 5
+            - eq: 5
+        fail:
+            - gt: 5
