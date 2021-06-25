@@ -104,7 +104,6 @@ workflow {
         VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
     ).collect())
 
-
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
             .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
