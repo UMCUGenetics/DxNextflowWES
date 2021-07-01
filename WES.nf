@@ -14,7 +14,7 @@ include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModu
     gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
 )
 include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
-include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/4.2.0.0/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
+include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/4.2.0.0/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
 
 // Fingerprint modules
 include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--intervals $params.dxtracks_path/$params.fingerprint_target --output_mode EMIT_ALL_SITES")
