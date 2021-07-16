@@ -34,6 +34,15 @@ include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Fla
 include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
+//SNParray calling
+include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"100", optional: "")
+include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.0.0/HaplotypeCaller.nf' params(genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", optional: "")
+include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(genome:"$params.genome")
+
+//Genotype gVCF SNParray calling
+include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.0.0/GenotypeGvcfs.nf" params(genome:"$params.genome",  optional: "-all-sites")
+include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(genome:"$params.genome")
+
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
 
@@ -74,7 +83,7 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // ExonCov
-    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    //ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -103,6 +112,22 @@ workflow {
         PICARD_CollectHsMetrics.out,
         VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
     ).collect())
+
+    // GATK HaplotypeCaller SNParray target
+    PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
+    GATK_HaplotypeCallerGVCF(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListToolsSNP.out.flatten()))
+    GATK_MergeGvcfs(GATK_HaplotypeCallerGVCF.out.map{output_name, vcf_files, vcf_idx_files, interval_file -> [output_name, vcf_files, vcf_idx_files]}.groupTuple())
+
+    // Genotyping GVCF SNParray target
+    GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
+    GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
+
+    // BAF analysis
+    BAF(GATK_MergeVcfs.out)
+
+    // UPD analysis
+    ParsePed(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
+    UPD(ped_file, analysis_id, ParsePed.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
@@ -324,3 +349,97 @@ process VersionLog {
         git --git-dir=${params.trend_analysis_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
         """
 }
+
+process BAF {
+    // Custom process to run BAF analysis
+    tag {"BAF ${output_name}"}
+    label 'BAF'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        tuple(output_name, path(vcf_files), path(vcf_idx_files))
+
+    output:
+        path("${output_name}_baf.igv")
+
+    script:
+        """
+        source ${params.baf_path}/venv/bin/activate
+        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} ${output_name}_baf.igv
+        """
+}
+
+process UPD {
+    // Custom process to run UPD analysis
+    tag {"UPD $trio_sample"}
+    label 'UPD'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        path(ped_file)
+        val(analysis_id)
+        val(trio_sample)
+        path(vcf_files)
+
+    output:
+        path("*.igv")
+
+    script:
+        """
+        source ${params.upd_path}/venv/bin/activate
+        python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files}
+        """
+}
+
+process ParsePed {
+    //Custom process to parse PED file and output sampleID of children with both parents.
+    tag {"ParsePed ${analysis_id}"}
+    label 'ParsePed'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        path(ped_file)
+        val(vcf_files)  
+ 
+    output:
+        stdout emit: trio_sample
+ 
+    script:
+        """
+        #!/usr/bin/python3
+   
+        def parse_ped(ped_file):
+            samples = {}  # 'sample_id': {'family': 'fam_id', 'parents': ['sample_id', 'sample_id']}
+            for line in ped_file:
+                ped_data = line.strip().split()
+                family, sample, father, mother, sex, phenotype = ped_data
+
+                #Create samples
+                if sample not in samples:
+                    samples[sample] = {'family': family, 'parents': [], 'children': []}
+                if father != '0' and father not in samples:
+                    samples[father] = {'family': family, 'parents': [], 'children': []}
+                if mother != '0' and mother not in samples:
+                    samples[mother] = {'family': family, 'parents': [], 'children': []}
+        
+                # Save sample relations
+                if father != '0':
+                    samples[sample]['parents'].append(father)
+                    samples[father]['children'].append(sample)
+                if mother != '0':
+                    samples[sample]['parents'].append(mother)
+                    samples[mother]['children'].append(sample)
+
+            trio_sample = []
+            for sample in samples:
+                if len(samples[sample]['parents']) == 2:
+                    if sample in "$vcf_files":
+                        trio_sample.append(sample)
+            return trio_sample
+
+        print(",".join(parse_ped(open("$ped_file","r"))))
+        """
+}
+
+
+
