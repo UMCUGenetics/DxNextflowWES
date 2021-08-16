@@ -36,12 +36,12 @@ include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/Verif
 
 //SNParray calling
 include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"100", optional: "")
-include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.0.0/HaplotypeCaller.nf' params(genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", optional: "")
-include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(genome:"$params.genome")
+include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", optional: "")
+include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(genome:"$params.genome")
 
 //Genotype gVCF SNParray calling
-include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.0.0/GenotypeGvcfs.nf" params(genome:"$params.genome",  optional: "-all-sites")
-include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.0.0/MergeVcfs.nf' params(genome:"$params.genome")
+include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(genome:"$params.genome",  optional: "-all-sites")
+include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(genome:"$params.genome")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -83,7 +83,7 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // ExonCov
-    //ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
