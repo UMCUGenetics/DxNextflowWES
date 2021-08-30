@@ -74,7 +74,9 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // ExonCov
-    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    ExonCovImportBam(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
+    // ExonCovSampleQC()
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -140,19 +142,64 @@ workflow.onComplete {
 }
 
 // Custom processes
-process ExonCov {
+process ExonCovImportBam {
     // Custom process to run ExonCov
-    tag {"ExonCov ${sample_id}"}
+    tag {"ExonCov ImportBam ${sample_id}"}
     label 'ExonCov'
+    label 'ExonCov_ImportBam'
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
         tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
+    output:
+        tuple(sample_id, stdout)
+
     script:
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
+        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --print_sample_id --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
+        """
+}
+
+process ExonCovSampleQC {
+    // Custom process to run ExonCov
+    tag {"ExonCov Sample QC ${sample_id}"}
+    label 'ExonCov'
+    label 'ExonCov_SampleQC'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        tuple(analysis_id, sample_ids, indications)
+
+    output:
+        tuple(analysis_id, path("${analysis_id}.ExonCovQC_check.out"))
+
+    script:
+        def samples = sample_ids.collect{"$it"}.join(" ")
+        def panels = indications.collect{"$it"}.join(" ")
+        """
+        source ${params.exoncov_path}/venv/bin/activate
+        python ${params.exoncov_path}/ExonCov.py sample_qc -s ${samples} -p {panels} > ${analysis_id}.ExonCovQC_check.out
+        """
+}
+
+process ClarityEppIndications {
+    // Custom process to run clarity_epp export sample_indications
+    tag {"ClarityEppExportSampleIndications ${analysis_id}"}
+    label 'ClarityEpp'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        val(sample_id)
+
+    output:
+        tuple(sample_id, stdout)
+
+    script:
+        """
+        source ${params.clarity_epp_path}/venv/bin/activate
+        python ${params.clarity_epp_path}/clarity_epp.py export sample_indications -a ${sample_id} | cut -f 2 | grep -v 'Indication'
         """
 }
 
