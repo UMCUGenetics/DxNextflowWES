@@ -64,14 +64,14 @@ workflow {
     Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK HaplotypeCaller
-    PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
-    GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
-    GATK_VariantFiltration(GATK_HaplotypeCaller.out)
-    GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
-    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
+    // PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
+    // GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
+    // GATK_VariantFiltration(GATK_HaplotypeCaller.out)
+    // GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
+    // GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
 
     // GATK UnifiedGenotyper (fingerprint)
-    GATK_UnifiedGenotyper(Sambamba_Merge.out)
+    // GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // ExonCov
     ExonCovImportBam(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -79,42 +79,42 @@ workflow {
     // ExonCovSampleQC()
 
     // ExomeDepth
-    ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
-    ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
+    // ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    // ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
     // Kinship
-    Kinship(GATK_CombineVariants.out)
+    // Kinship(GATK_CombineVariants.out)
 
     // QC
-    FastQC(fastq_files)
+    // FastQC(fastq_files)
 
-    PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
-    PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
-    PICARD_CollectHsMetrics(Sambamba_Merge.out)
-    CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
+    // PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
+    // PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
+    // PICARD_CollectHsMetrics(Sambamba_Merge.out)
+    // CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
 
-    Sambamba_Flagstat(Sambamba_Merge.out)
-    GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
+    // Sambamba_Flagstat(Sambamba_Merge.out)
+    // GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
-    VerifyBamID2(Sambamba_Merge.out.groupTuple())
+    // VerifyBamID2(Sambamba_Merge.out.groupTuple())
 
-    MultiQC(analysis_id, Channel.empty().mix(
-        FastQC.out,
-        PICARD_CollectMultipleMetrics.out,
-        PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
-    ).collect())
+    // MultiQC(analysis_id, Channel.empty().mix(
+    //     FastQC.out,
+    //     PICARD_CollectMultipleMetrics.out,
+    //     PICARD_EstimateLibraryComplexity.out,
+    //     PICARD_CollectHsMetrics.out,
+    //     VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
+    // ).collect())
 
-    TrendAnalysisTool(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
+    // TrendAnalysisTool(
+    //     GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //         .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //         .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //         .groupTuple()
+    // )
 
     //SavePedFile
-    SavePedFile()
+    // SavePedFile()
 
     // Repository versions
     VersionLog()
@@ -134,7 +134,9 @@ workflow.onComplete {
     // Send email
     if (workflow.success) {
         def subject = "WES Workflow Successful: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
+        // sendMail(to: params.email, subject: subject, body: email_html, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
+        sendMail(to: params.email, subject: subject, body: email_html)
+
     } else {
         def subject = "WES Workflow Failed: ${analysis_id}"
         sendMail(to: params.email, subject: subject, body: email_html)
