@@ -364,6 +364,9 @@ process VersionLog {
         echo 'ExonCov' >> repository_version.log
         git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
+        echo 'clarity_epp' >> repository_version.log
+        git --git-dir=${params.clarity_epp_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+
         echo 'ExomeDepth' >> repository_version.log
         git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
