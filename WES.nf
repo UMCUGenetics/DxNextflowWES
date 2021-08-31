@@ -191,6 +191,7 @@ process ClarityEppIndications {
     tag {"ClarityEppExportSampleIndications ${analysis_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false  //Disable cache to force a new version log when restarting the workflow.
 
     input:
         val(sample_id)
