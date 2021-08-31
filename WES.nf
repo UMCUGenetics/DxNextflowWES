@@ -75,7 +75,7 @@ workflow {
 
     // ExonCov
     ExonCovImportBam(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
-    ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
+    ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
     // ExonCovSampleQC()
 
     // ExomeDepth
