@@ -76,7 +76,17 @@ workflow {
     // ExonCov
     ExonCovImportBam(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
-    // ExonCovSampleQC()
+    //ExonCovImportBam.out.view()
+    //ClarityEppIndications.out.view()
+    ExonCovImportBam.out.join(ClarityEppIndications.out).groupTuple().transpose() | view
+    ExonCovImportBam.out.join(ClarityEppIndications.out).groupTuple().transpose().map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}.groupTuple() | view
+    ExonCovSampleQC(
+        ExonCovImportBam.out.join(ClarityEppIndications.out)
+            .groupTuple()
+            .transpose()
+            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+            .groupTuple()
+    )
 
     // ExomeDepth
     // ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -117,7 +127,7 @@ workflow {
     // SavePedFile()
 
     // Repository versions
-    VersionLog()
+    // VersionLog()
 }
 
 // Workflow completion notification
@@ -160,13 +170,13 @@ process ExonCovImportBam {
     script:
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --print_sample_id --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
+        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --print_sample_id --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file} | tr -d '\n'
         """
 }
 
 process ExonCovSampleQC {
     // Custom process to run ExonCov
-    tag {"ExonCov Sample QC ${sample_id}"}
+    tag {"ExonCov Sample QC ${analysis_id}"}
     label 'ExonCov'
     label 'ExonCov_SampleQC'
     shell = ['/bin/bash', '-eo', 'pipefail']
@@ -182,7 +192,7 @@ process ExonCovSampleQC {
         def panels = indications.collect{"$it"}.join(" ")
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py sample_qc -s ${samples} -p {panels} > ${analysis_id}.ExonCovQC_check.out
+        python ${params.exoncov_path}/ExonCov.py sample_qc -s ${samples} -p ${panels} > ${analysis_id}.ExonCovQC_check.out
         """
 }
 
@@ -191,7 +201,7 @@ process ClarityEppIndications {
     tag {"ClarityEppExportSampleIndications ${analysis_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false  //Disable cache to force a new version log when restarting the workflow.
+    // cache = false  //Disable cache to force a new version log when restarting the workflow.
 
     input:
         val(sample_id)
@@ -202,7 +212,7 @@ process ClarityEppIndications {
     script:
         """
         source ${params.clarity_epp_path}/venv/bin/activate
-        python ${params.clarity_epp_path}/clarity_epp.py export sample_indications -a ${sample_id} | cut -f 2 | grep -v 'Indication'
+        python ${params.clarity_epp_path}/clarity_epp.py export sample_indications -a ${sample_id} | cut -f 2 | grep -v 'Indication' | tr -d '\n'
         """
 }
 
