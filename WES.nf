@@ -118,8 +118,6 @@ workflow {
     )
     ExonCovSampleQC(
         ExonCovImportBam.out.join(ClarityEppIndications.out)
-            .groupTuple()
-            .transpose()
             .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
             .groupTuple()
     )
