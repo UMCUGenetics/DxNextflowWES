@@ -126,8 +126,8 @@ workflow {
     BAF_IGV(GATK_MergeVcfs.out)
 
     // UPD analysis
-    ParsePed(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
-    UPD_IGV(ped_file, analysis_id, ParsePed.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
+    ParseChildFromFullTrio(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
+    UPD_IGV(ped_file, analysis_id, ParseChildFromFullTrio.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
@@ -289,6 +289,65 @@ process CreateHSmetricsSummary {
         python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
         """
 }
+process BAF_IGV {
+    // Custom process to run BAF analysis
+    tag {"BAF_IGV ${output_name}"}
+    label 'BAF_IGV'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        tuple(output_name, path(vcf_files), path(vcf_idx_files))
+
+    output:
+        path("${output_name}_baf.igv")
+
+    script:
+        """
+        source ${params.baf_path}/venv/bin/activate
+        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} -o ${output_name}_baf.igv
+        """
+}
+
+process ParseChildFromFullTrio {
+    //Custom process to parse PED file and output sampleID of children with both parents.
+    tag {"ParseChildFromFullTrio ${analysis_id}"}
+    label 'ParseChildFromFullTrio'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        path(ped_file)
+        val(vcf_files)
+
+    output:
+        stdout emit: trio_sample
+
+    script:
+        """
+        python ${baseDir}/assets/parse_child_from_fulltrio.py ${ped_file} ${vcf_files}
+        """
+}
+
+process UPD_IGV {
+    // Custom process to run UPD analysis
+    tag {"UPD_IGV $trio_sample"}
+    label 'UPD_IGV'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        path(ped_file)
+        val(analysis_id)
+        val(trio_sample)
+        path(vcf_files)
+
+    output:
+        path("*.igv")
+
+    script:
+        """
+        source ${params.upd_path}/venv/bin/activate
+        python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files}
+        """
+}
 
 process TrendAnalysisTool {
     // Custom process to run Trend_Analysis_tool
@@ -345,101 +404,13 @@ process VersionLog {
         echo 'ExomeDepth' >> repository_version.log
         git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
+        echo 'Dx_UPD' >> repository_version.log
+        git --git-dir=${params.upd_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+
+        echo 'Dx_BAF' >> repository_version.log
+        git --git-dir=${params.baf_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+
         echo 'TrendAnalysis' >> repository_version.log
         git --git-dir=${params.trend_analysis_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
         """
 }
-
-process BAF_IGV {
-    // Custom process to run BAF analysis
-    tag {"BAF_IGV ${output_name}"}
-    label 'BAF_IGV'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-        tuple(output_name, path(vcf_files), path(vcf_idx_files))
-
-    output:
-        path("${output_name}_baf.igv")
-
-    script:
-        """
-        source ${params.baf_path}/venv/bin/activate
-        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} -o ${output_name}_baf.igv
-        """
-}
-
-process UPD_IGV {
-    // Custom process to run UPD analysis
-    tag {"UPD_IGV $trio_sample"}
-    label 'UPD_IGV'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-        path(ped_file)
-        val(analysis_id)
-        val(trio_sample)
-        path(vcf_files)
-
-    output:
-        path("*.igv")
-
-    script:
-        """
-        source ${params.upd_path}/venv/bin/activate
-        python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files}
-        """
-}
-
-process ParsePed {
-    //Custom process to parse PED file and output sampleID of children with both parents.
-    tag {"ParsePed ${analysis_id}"}
-    label 'ParsePed'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-        path(ped_file)
-        val(vcf_files)  
- 
-    output:
-        stdout emit: trio_sample
- 
-    script:
-        """
-        #!/usr/bin/python3
-   
-        def parse_ped(ped_file):
-            samples = {}  # 'sample_id': {'family': 'fam_id', 'parents': ['sample_id', 'sample_id']}
-            for line in ped_file:
-                ped_data = line.strip().split()
-                family, sample, father, mother, sex, phenotype = ped_data
-
-                #Create samples
-                if sample not in samples:
-                    samples[sample] = {'family': family, 'parents': [], 'children': []}
-                if father != '0' and father not in samples:
-                    samples[father] = {'family': family, 'parents': [], 'children': []}
-                if mother != '0' and mother not in samples:
-                    samples[mother] = {'family': family, 'parents': [], 'children': []}
-        
-                # Save sample relations
-                if father != '0':
-                    samples[sample]['parents'].append(father)
-                    samples[father]['children'].append(sample)
-                if mother != '0':
-                    samples[sample]['parents'].append(mother)
-                    samples[mother]['children'].append(sample)
-
-            trio_sample = []
-            for sample in samples:
-                if len(samples[sample]['parents']) == 2:
-                    if sample in "$vcf_files":
-                        trio_sample.append(sample)
-            return trio_sample
-
-        print(",".join(parse_ped(open("$ped_file","r"))))
-        """
-}
-
-
-
