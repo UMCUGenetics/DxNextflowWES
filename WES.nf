@@ -123,11 +123,11 @@ workflow {
     GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
 
     // BAF analysis
-    BAF(GATK_MergeVcfs.out)
+    BAF_IGV(GATK_MergeVcfs.out)
 
     // UPD analysis
     ParsePed(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
-    UPD(ped_file, analysis_id, ParsePed.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
+    UPD_IGV(ped_file, analysis_id, ParsePed.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
@@ -350,10 +350,10 @@ process VersionLog {
         """
 }
 
-process BAF {
+process BAF_IGV {
     // Custom process to run BAF analysis
-    tag {"BAF ${output_name}"}
-    label 'BAF'
+    tag {"BAF_IGV ${output_name}"}
+    label 'BAF_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
@@ -365,14 +365,14 @@ process BAF {
     script:
         """
         source ${params.baf_path}/venv/bin/activate
-        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} ${output_name}_baf.igv
+        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} -o ${output_name}_baf.igv
         """
 }
 
-process UPD {
+process UPD_IGV {
     // Custom process to run UPD analysis
-    tag {"UPD $trio_sample"}
-    label 'UPD'
+    tag {"UPD_IGV $trio_sample"}
+    label 'UPD_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
