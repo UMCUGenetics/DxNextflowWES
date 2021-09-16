@@ -15,7 +15,7 @@ curl -s https://get.nextflow.io | bash
 
 #### Running WES workflow
 ```bash
-nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> --email <email> --gatk_hc_interval_list <callingtarget_dir_path> --picard_bait <baitinterval_dir_path> [-profile slurm|mac]
+nextflow run WES.nf -c WES.config --fastq_path <fastq_dir_path> --outdir <output_dir_path> --email <email> [-profile slurm|mac]
 ```
 
 #### Running WES Fingerprint workflow
