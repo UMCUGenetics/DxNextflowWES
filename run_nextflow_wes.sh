@@ -9,12 +9,10 @@ output=`realpath $2`
 email=$3
 
 design=${4-default}
-gatk_hc_interval_list='Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_CREv2_100bpflank.interval_list'
-picard_bait='Tracks/SureSelect_CREv2_elidS30409818_Covered.list'
 if [ $design == "SSv7" ]; then
     echo " #### SSv7 design target files are used for the analysis ####"
-    gatk_hc_interval_list='Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_CREv2_SSv7_100bpflank.interval_list'
-    picard_bait='Tracks/SureSelect_v7_elidS31285117_Covered.list'
+    gatk_hc_interval_list='--gatk_hc_interval_list Tracks/ENSEMBL_UCSC_merged_collapsed_sorted_v3_CREv2_SSv7_100bpflank.interval_list'
+    picard_bait='--picard_bait Tracks/SureSelect_v7_elidS31285117_Covered.list'
 fi
 
 mkdir -p $output && cd $output
@@ -44,8 +42,8 @@ module load Java/1.8.0_60
 --fastq_path $input \
 --outdir $output \
 --email $email \
---gatk_hc_interval_list $gatk_hc_interval_list \
---picard_bait $picard_bait \
+${gatk_hc_interval_list:-""} \
+${picard_bait:-""} \
 -profile slurm \
 -resume -ansi-log false
 
