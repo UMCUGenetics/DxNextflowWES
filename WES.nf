@@ -194,7 +194,7 @@ workflow.onComplete {
 
 // Custom processes
 process ExonCovImportBam {
-    // Custom process to run ExonCov
+    // Custom process to run ExonCov import_bam
     tag {"ExonCov ImportBam ${sample_id}"}
     label 'ExonCov'
     label 'ExonCov_ImportBam'
@@ -219,7 +219,7 @@ process ExonCovImportBam {
 }
 
 process ExonCovSampleQC {
-    // Custom process to run ExonCov
+    // Custom process to run ExonCov sample_qc
     tag {"ExonCov Sample QC ${analysis_id}"}
     label 'ExonCov'
     label 'ExonCov_SampleQC'
