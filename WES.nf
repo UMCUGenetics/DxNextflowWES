@@ -147,7 +147,8 @@ workflow {
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
+        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
+        ExonCovSampleQC.out
     ).collect())
 
     TrendAnalysisTool(
@@ -228,7 +229,7 @@ process ExonCovSampleQC {
         tuple(analysis_id, sample_ids, indications)
 
     output:
-        tuple(analysis_id, path("${analysis_id}.ExonCovQC_check.out"))
+        path("${analysis_id}.ExonCovQC_check.out")
 
     script:
         def samples = sample_ids.collect{"$it"}.join(" ")
