@@ -1,37 +1,67 @@
 #!/usr/bin/env nextflow
 nextflow.preview.dsl=2
 
+// Utils modules
 include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
 
 // Mapping modules
-include BWAMapping from './NextflowModules/BWA-Mapping/bwa-0.7.17_samtools-1.9/Mapping.nf' params(genome_fasta: "$params.genome", optional: '-c 100 -M')
+include BWAMapping from './NextflowModules/BWA-Mapping/bwa-0.7.17_samtools-1.9/Mapping.nf' params(
+    genome_fasta: "$params.genome", optional: '-c 100 -M'
+)
 include MarkdupMerge as Sambamba_MarkdupMerge from './NextflowModules/Sambamba/0.7.0/Markdup.nf'
 
 // IndelRealignment modules
-include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/RealignerTargetCreator.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_rtc_options")
-include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "")
+include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/RealignerTargetCreator.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: "$params.gatk_rtc_options"
+)
+include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: ""
+)
 include ViewUnmapped as Sambamba_ViewUnmapped from './NextflowModules/Sambamba/0.7.0/ViewUnmapped.nf'
 include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
 
 // HaplotypeCaller modules
-include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"500", optional: "")
-include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "$params.gatk_hc_options")
-include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/VariantFiltration.nf' params(
-    gatk_path: "$params.gatk_path", genome:"$params.genome", snp_filter: "$params.gatk_snp_filter", snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
+include IntervalListTools as PICARD_IntervalListTools from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(
+    scatter_count: "500", optional: ""
 )
-include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--assumeIdenticalSamples")
-include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/SelectVariants.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome")
+include HaplotypeCaller as GATK_HaplotypeCaller from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/HaplotypeCaller.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: "$params.gatk_hc_options"
+)
+include VariantFiltrationSnpIndel as GATK_VariantFiltration from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/VariantFiltration.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome", snp_filter: "$params.gatk_snp_filter",
+    snp_cluster: "$params.gatk_snp_cluster", indel_filter: "$params.gatk_indel_filter"
+)
+include CombineVariants as GATK_CombineVariants from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/CombineVariants.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: "--assumeIdenticalSamples"
+)
+include SelectVariantsSample as GATK_SingleSampleVCF from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/SelectVariants.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome"
+)
 
 // Fingerprint modules
-include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--intervals $params.dxtracks_path/$params.fingerprint_target --output_mode EMIT_ALL_SITES")
+include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(
+    gatk_path: "$params.gatk_path", genome: "$params.genome",
+    optional: "--intervals $params.dxtracks_path/$params.fingerprint_target --output_mode EMIT_ALL_SITES"
+)
 
 // QC Modules
 include FastQC from './NextflowModules/FastQC/0.11.8/FastQC.nf' params(optional:'')
-include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(genome:"$params.genome", optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
-include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf' params(optional:"OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500")
-include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(genome:"$params.genome", bait:"$params.dxtracks_path/$params.picard_bait", target:"$params.dxtracks_path/$params.picard_target", optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE")
+include CollectMultipleMetrics as PICARD_CollectMultipleMetrics from './NextflowModules/Picard/2.22.0/CollectMultipleMetrics.nf' params(
+    genome: "$params.genome",
+    optional: "PROGRAM=null PROGRAM=CollectAlignmentSummaryMetrics PROGRAM=CollectInsertSizeMetrics METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE"
+)
+include EstimateLibraryComplexity as PICARD_EstimateLibraryComplexity from './NextflowModules/Picard/2.22.0/EstimateLibraryComplexity.nf' params(
+    optional: "OPTICAL_DUPLICATE_PIXEL_DISTANCE=2500"
+)
+include CollectHsMetrics as PICARD_CollectHsMetrics from './NextflowModules/Picard/2.22.0/CollectHsMetrics.nf' params(
+    genome: "$params.genome", bait:"$params.dxtracks_path/$params.picard_bait",
+    target: "$params.dxtracks_path/$params.picard_target",
+    optional: "METRIC_ACCUMULATION_LEVEL=null METRIC_ACCUMULATION_LEVEL=SAMPLE"
+)
 include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
-include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(optional:"--config $baseDir/assets/multiqc_config.yaml")
+include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
+    optional: "--config $baseDir/assets/multiqc_config.yaml"
+)
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
@@ -65,16 +95,32 @@ workflow {
 
     // GATK HaplotypeCaller
     PICARD_IntervalListTools(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list"))
-    GATK_HaplotypeCaller(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListTools.out.flatten()))
+    GATK_HaplotypeCaller(
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, bam_file, bai_file]}
+            .groupTuple()
+            .combine(PICARD_IntervalListTools.out.flatten())
+    )
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
-    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]}))
+    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
+    )
 
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
+    // Clarity epp
+    ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
+
     // ExonCov
-    ExonCov(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
+    ExonCovImportBam(
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+    )
+    ExonCovSampleQC(
+        ExonCovImportBam.out.join(ClarityEppIndications.out)
+            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+            .groupTuple()
+    )
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -101,7 +147,8 @@ workflow {
         PICARD_CollectMultipleMetrics.out,
         PICARD_EstimateLibraryComplexity.out,
         PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]}
+        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
+        ExonCovSampleQC.out
     ).collect())
 
     TrendAnalysisTool(
@@ -132,7 +179,13 @@ workflow.onComplete {
     // Send email
     if (workflow.success) {
         def subject = "WES Workflow Successful: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html, attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html")
+        sendMail(
+            to: params.email,
+            subject: subject,
+            body: email_html,
+            attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html"
+        )
+
     } else {
         def subject = "WES Workflow Failed: ${analysis_id}"
         sendMail(to: params.email, subject: subject, body: email_html)
@@ -140,19 +193,72 @@ workflow.onComplete {
 }
 
 // Custom processes
-process ExonCov {
-    // Custom process to run ExonCov
-    tag {"ExonCov ${sample_id}"}
+process ExonCovImportBam {
+    // Custom process to run ExonCov import_bam
+    tag {"ExonCov ImportBam ${sample_id}"}
     label 'ExonCov'
+    label 'ExonCov_ImportBam'
     shell = ['/bin/bash', '-eo', 'pipefail']
 
     input:
         tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
+    output:
+        tuple(sample_id, stdout)
+
     script:
         """
         source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam --threads ${task.cpus} --overwrite --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} ${analysis_id} WES ${bam_file}
+        python ${params.exoncov_path}/ExonCov.py import_bam \
+        --threads ${task.cpus} \
+        --overwrite \
+        --print_sample_id \
+        --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} \
+        ${analysis_id} WES ${bam_file} | tr -d '\n'
+        """
+}
+
+process ExonCovSampleQC {
+    // Custom process to run ExonCov sample_qc
+    tag {"ExonCov Sample QC ${analysis_id}"}
+    label 'ExonCov'
+    label 'ExonCov_SampleQC'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        tuple(analysis_id, sample_ids, indications)
+
+    output:
+        path("${analysis_id}.ExonCovQC_check.out")
+
+    script:
+        def samples = sample_ids.collect{"$it"}.join(" ")
+        def panels = indications.collect{"$it"}.join(" ")
+        """
+        source ${params.exoncov_path}/venv/bin/activate
+        python ${params.exoncov_path}/ExonCov.py sample_qc \
+        -s ${samples} -p ${panels} > ${analysis_id}.ExonCovQC_check.out
+        """
+}
+
+process ClarityEppIndications {
+    // Custom process to run clarity_epp export sample_indications
+    tag {"ClarityEppExportSampleIndications ${analysis_id}"}
+    label 'ClarityEpp'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false  //Disable cache to force a clarity export restarting the workflow.
+
+    input:
+        val(sample_id)
+
+    output:
+        tuple(sample_id, stdout)
+
+    script:
+        """
+        source ${params.clarity_epp_path}/venv/bin/activate
+        python ${params.clarity_epp_path}/clarity_epp.py export sample_indications \
+        -a ${sample_id} | cut -f 2 | grep -v 'Indication' | tr -d '\n'
         """
 }
 
@@ -316,6 +422,9 @@ process VersionLog {
 
         echo 'ExonCov' >> repository_version.log
         git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
+
+        echo 'clarity_epp' >> repository_version.log
+        git --git-dir=${params.clarity_epp_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
         echo 'ExomeDepth' >> repository_version.log
         git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
