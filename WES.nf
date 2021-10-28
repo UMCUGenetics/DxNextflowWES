@@ -180,7 +180,7 @@ workflow.onComplete {
     if (workflow.success) {
         def subject = "WES Workflow Successful: ${analysis_id}"
         sendMail(
-            to: params.email,
+            to: params.email.trim(),
             subject: subject,
             body: email_html,
             attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html"
@@ -188,7 +188,7 @@ workflow.onComplete {
 
     } else {
         def subject = "WES Workflow Failed: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html)
+        sendMail(to: params.email.trim(), subject: subject, body: email_html)
     }
 }
 
