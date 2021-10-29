@@ -28,10 +28,10 @@ workflow.onComplete {
     // Send email
     if (workflow.success) {
         def subject = "WES Fingerprint Workflow Successful: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html)
+        sendMail(to: params.email.trim(), subject: subject, body: email_html)
     } else {
         def subject = "WES Fingerprint Workflow Failed: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html)
+        sendMail(to: params.email.trim(), subject: subject, body: email_html)
     }
 }
 
