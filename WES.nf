@@ -3,6 +3,7 @@ nextflow.preview.dsl=2
 
 // Utils modules
 include extractFastqPairFromDir from './NextflowModules/Utils/fastq.nf'
+include ExportParams as Workflow_ExportParams from './NextflowModules/Utils/workflow.nf'
 
 // Mapping modules
 include BWAMapping from './NextflowModules/BWA-Mapping/bwa-0.7.17_samtools-1.9/Mapping.nf' params(
@@ -161,8 +162,9 @@ workflow {
     //SavePedFile
     SavePedFile()
 
-    // Repository versions
+    // Create log files: Repository versions and Workflow params
     VersionLog()
+    Workflow_ExportParams()
 }
 
 // Workflow completion notification
