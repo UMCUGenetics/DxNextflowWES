@@ -1,7 +1,9 @@
 #!/usr/bin/env nextflow
 nextflow.preview.dsl=2
 
+// Utils modules
 include extractBamFromDir from './NextflowModules/Utils/bam.nf'
+include ExportParams as Workflow_ExportParams from './NextflowModules/Utils/workflow.nf'
 
 // Fingerprint modules
 include UnifiedGenotyper as GATK_UnifiedGenotyper from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/UnifiedGenotyper.nf' params(gatk_path: "$params.gatk_path", genome:"$params.genome", optional: "--intervals $params.dxtracks_path/$params.fingerprint_target --output_mode EMIT_ALL_SITES")
@@ -10,8 +12,11 @@ def bam_files = extractBamFromDir(params.bam_path)
 def analysis_id = params.outdir.split('/')[-1]
 
 workflow {
-    // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(bam_files)
+
+    // Create log files: Repository versions and Workflow params
+    VersionLog()
+    Workflow_ExportParams()
 }
 
 // Workflow completion notification
@@ -28,10 +33,10 @@ workflow.onComplete {
     // Send email
     if (workflow.success) {
         def subject = "WES Fingerprint Workflow Successful: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html)
+        sendMail(to: params.email.trim(), subject: subject, body: email_html)
     } else {
         def subject = "WES Fingerprint Workflow Failed: ${analysis_id}"
-        sendMail(to: params.email, subject: subject, body: email_html)
+        sendMail(to: params.email.trim(), subject: subject, body: email_html)
     }
 }
 
@@ -40,6 +45,7 @@ process VersionLog {
     tag {"VersionLog ${analysis_id}"}
     label 'VersionLog'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false  //Disable cache to force a new version log when restarting the workflow.
 
     output:
         path('repository_version.log')
