@@ -3,6 +3,8 @@ extra_fn_clean_exts:
 
 top_modules:
 - 'picard'
+- 'custom_content'
+- 'verifybamid'
 - 'fastqc'
 
 
@@ -109,3 +111,15 @@ table_cond_formatting_rules:
             - eq: 5
         fail:
             - gt: 5
+
+custom_data:
+    exoncov:
+        id: 'exoncov'
+        section_name: 'ExonCov'
+        plot_type: 'table'
+        pconfig:
+            id: 'exoncov'
+            namespace: 'ExonCov'
+sp:
+    exoncov:
+        fn: '*.ExonCovQC_check.out'
