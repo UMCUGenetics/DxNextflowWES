@@ -101,16 +101,16 @@ table_cond_formatting_rules:
             - lt: 95
     mqc-generalstats-verifybamid-FREEMIX:
         pass:
-            - lt: 5
-            - eq: 5
+            - lt: 1
+            - eq: 1
         fail:
-            - gt: 5
+            - gt: 1
     FREEMIX:
         pass:
-            - lt: 5
-            - eq: 5
+            - lt: 1
+            - eq: 1
         fail:
-            - gt: 5
+            - gt: 1
 
 custom_data:
     exoncov:
