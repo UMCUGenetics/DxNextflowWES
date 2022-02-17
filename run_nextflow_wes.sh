@@ -38,7 +38,7 @@ module load Java/1.8.0_60
 --email $email \
 -profile slurm \
 -resume -ansi-log false \
-${optional_params:-""}
+${optional_params[@]:-""}
 
 if [ \$? -eq 0 ]; then
     echo "Nextflow done."
