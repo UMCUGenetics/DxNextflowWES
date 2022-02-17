@@ -7,8 +7,8 @@ workflow_path='/hpc/diaggen/software/production/DxNextflowWES'
 input=`realpath -e $1`
 output=`realpath $2`
 email=$3
-
 optional_params=( "${@:4}" )
+
 mkdir -p $output && cd $output
 mkdir -p log
 
