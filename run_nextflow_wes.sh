@@ -7,6 +7,8 @@ workflow_path='/hpc/diaggen/software/production/DxNextflowWES'
 input=`realpath -e $1`
 output=`realpath $2`
 email=$3
+optional_params=( "${@:4}" )
+
 mkdir -p $output && cd $output
 mkdir -p log
 
@@ -35,7 +37,8 @@ module load Java/1.8.0_60
 --outdir $output \
 --email $email \
 -profile slurm \
--resume -ansi-log false
+-resume -ansi-log false \
+${optional_params[@]:-""}
 
 if [ \$? -eq 0 ]; then
     echo "Nextflow done."

@@ -3,6 +3,8 @@ extra_fn_clean_exts:
 
 top_modules:
 - 'picard'
+- 'custom_content'
+- 'verifybamid'
 - 'fastqc'
 
 
@@ -99,13 +101,25 @@ table_cond_formatting_rules:
             - lt: 95
     mqc-generalstats-verifybamid-FREEMIX:
         pass:
-            - lt: 5
-            - eq: 5
+            - lt: 1
+            - eq: 1
         fail:
-            - gt: 5
+            - gt: 1
     FREEMIX:
         pass:
-            - lt: 5
-            - eq: 5
+            - lt: 1
+            - eq: 1
         fail:
-            - gt: 5
+            - gt: 1
+
+custom_data:
+    exoncov:
+        id: 'exoncov'
+        section_name: 'ExonCov'
+        plot_type: 'table'
+        pconfig:
+            id: 'exoncov'
+            namespace: 'ExonCov'
+sp:
+    exoncov:
+        fn: '*.ExonCovQC_check.out'
