@@ -66,13 +66,23 @@ include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
 //SNParray calling
-include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(scatter_count:"100", optional: "")
-include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", optional: "")
-include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(genome:"$params.genome")
+include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(
+    scatter_count:"100", optional: ""
+)
+include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(
+    genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", compress:true, optional: ""
+)
+include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(
+    genome:"$params.genome", compress:true
+)
 
 //Genotype gVCF SNParray calling
-include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(genome:"$params.genome",  optional: "-all-sites")
-include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(genome:"$params.genome")
+include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(
+    genome:"$params.genome",  optional: "-all-sites", compress:true
+)
+include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(
+    genome:"$params.genome", compress:true
+)
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -123,14 +133,14 @@ workflow {
     ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
-    ExonCovImportBam(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
-    )
-    ExonCovSampleQC(
-        ExonCovImportBam.out.join(ClarityEppIndications.out)
-            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
-            .groupTuple()
-    )
+    //ExonCovImportBam
+    //    Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+    //)
+    //ExonCovSampleQC(
+    //    ExonCovImportBam.out.join(ClarityEppIndications.out)
+    //        .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+    //        .groupTuple()
+    //)
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -152,19 +162,26 @@ workflow {
 
     VerifyBamID2(Sambamba_Merge.out.groupTuple())
 
-    MultiQC(analysis_id, Channel.empty().mix(
-        FastQC.out,
-        PICARD_CollectMultipleMetrics.out,
-        PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
-        ExonCovSampleQC.out
-    ).collect())
+    //MultiQC(analysis_id, Channel.empty().mix(
+    //    FastQC.out,
+    //    PICARD_CollectMultipleMetrics.out,
+    //    PICARD_EstimateLibraryComplexity.out,
+    //    PICARD_CollectHsMetrics.out,
+    //    VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
+    //    ExonCovSampleQC.out
+    //).collect())
 
     // GATK HaplotypeCaller SNParray target
     PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
-    GATK_HaplotypeCallerGVCF(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple().combine(PICARD_IntervalListToolsSNP.out.flatten()))
-    GATK_MergeGvcfs(GATK_HaplotypeCallerGVCF.out.map{output_name, vcf_files, vcf_idx_files, interval_file -> [output_name, vcf_files, vcf_idx_files]}.groupTuple())
+    GATK_HaplotypeCallerGVCF(
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}
+        .groupTuple()
+        .combine(PICARD_IntervalListToolsSNP.out.flatten())
+    )
+    GATK_MergeGvcfs(
+        GATK_HaplotypeCallerGVCF.out.map{output_name, vcf_files, vcf_idx_files, interval_file -> [output_name, vcf_files, vcf_idx_files]}
+        .groupTuple()
+    )
 
     // Genotyping GVCF SNParray target
     GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
@@ -175,14 +192,25 @@ workflow {
 
     // UPD analysis
     ParseChildFromFullTrio(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
-    UPD_IGV(ped_file, analysis_id, ParseChildFromFullTrio.out.splitCsv().flatten(), GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect())
-
-    TrendAnalysisTool(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
+    UPD_IGV(ped_file, analysis_id, 
+        ParseChildFromFullTrio.out.splitCsv().flatten(), 
+        GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect()
     )
+
+    // IGV sessions
+    Single_IGV(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join(''), analysis_id]})
+    Family_IGV(ParseChildFromFullTrio.out.splitCsv()
+        .flatten()
+        .cross(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join('')]})
+        .map{sample_id, refset -> [sample_id, refset[1], analysis_id, ped_file]}
+    )
+
+    //TrendAnalysisTool(
+    //    GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //        .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //        .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //        .groupTuple()
+    //)
 
     //SavePedFile
     SavePedFile()
@@ -286,6 +314,27 @@ process ClarityEppIndications {
         source ${params.clarity_epp_path}/venv/bin/activate
         python ${params.clarity_epp_path}/clarity_epp.py export sample_indications \
         -a ${sample_id} | cut -f 2 | grep -v 'Indication' | tr -d '\n'
+        """
+}
+
+process GetRefset{
+    // Custom process to run get exomedepth reference set from exomedepth db
+    tag {"GetRefset ${sample_id}"}
+    label 'GetRefset'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
+
+    input:
+        tuple(sample_id, rg_id)
+
+    output:
+        tuple(sample_id, stdout)
+
+    script:
+        def rg_ids = rg_id.collect().join(" ")
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_reset ${sample_id} ${rg_ids}
         """
 }
 
@@ -412,7 +461,7 @@ process BAF_IGV {
     script:
         """
         source ${params.baf_path}/venv/bin/activate
-        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} -o ${output_name}_baf.igv
+        python ${params.baf_path}/make_BAF_igv.py ${vcf_files} -o ${output_name}_baf.igv -c
         """
 }
 
@@ -448,12 +497,53 @@ process UPD_IGV {
         path(vcf_files)
 
     output:
-        path("*.igv")
+        path("*.igv", emit: UPD_IGV_files)
 
     script:
         """
         source ${params.upd_path}/venv/bin/activate
         python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files}
+        """
+}
+
+process Single_IGV {
+    // Custom process to run Single sample IGV analysis
+    tag {"Single_IGV $sample_id"}
+    label 'Single_IGV'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
+
+    input:
+        tuple(sample_id, refset, analysis_id)
+
+    output:
+        path("*.xml", emit: Single_IGV_file)
+
+    script:
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/igv_xml_session.py single_igv ./ ${sample_id} ${analysis_id} ${refset}
+        """
+}
+
+
+process Family_IGV {
+    // Custom process to run Family IGV analysis
+    tag {"Family_IGV $sample_id"}
+    label 'Family_IGV'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
+
+    input:
+        tuple(sample_id, refset, analysis_id, ped_file)
+
+    output:
+        path("*.xml", emit: Family_IGV_file)
+
+    script:
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/igv_xml_session.py family_igv ./ ${ped_file} ${analysis_id} ${sample_id} ${refset}
         """
 }
 
