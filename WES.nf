@@ -143,6 +143,9 @@ workflow {
     //)
 
     // ExomeDepth
+    rg_id = BWAMapping.out.map{sample_id, rg_id, bam_file, bai_file -> [sample_id, rg_id.split('_')[1]]}.unique().groupTuple()
+
+    GetRefset(rg_id)
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
@@ -334,7 +337,7 @@ process GetRefset{
         def rg_ids = rg_id.collect().join(" ")
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_reset ${sample_id} ${rg_ids}
+        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset ${sample_id} ${rg_ids}
         """
 }
 
@@ -502,7 +505,7 @@ process UPD_IGV {
     script:
         """
         source ${params.upd_path}/venv/bin/activate
-        python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files}
+        python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files} -c
         """
 }
 
@@ -511,7 +514,6 @@ process Single_IGV {
     tag {"Single_IGV $sample_id"}
     label 'Single_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false
 
     input:
         tuple(sample_id, refset, analysis_id)
@@ -532,7 +534,6 @@ process Family_IGV {
     tag {"Family_IGV $sample_id"}
     label 'Family_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false
 
     input:
         tuple(sample_id, refset, analysis_id, ped_file)
