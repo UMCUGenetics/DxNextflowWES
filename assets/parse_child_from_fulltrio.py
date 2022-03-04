@@ -12,7 +12,7 @@ if __name__ == "__main__":
     trio_sample = []
     for sample in samples:
         if len(samples[sample]['parents']) == 2:
-            for vcf in arguments.vcf_files:
+            for vcf in list(set(arguments.vcf_files)):
                 if sample in vcf:
                     trio_sample.append(sample)
 
