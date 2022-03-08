@@ -65,18 +65,13 @@ include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
 )
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
-//SNParray calling
+//SNParray-calling Modules
 include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules/Picard/2.22.0/IntervalListTools.nf' params(
     scatter_count:"100", optional: ""
 )
 include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(
     genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", compress:true, optional: ""
 )
-include MergeGvcfs as GATK_MergeGvcfs from './NextflowModules/GATK/4.2.1.0/MergeVcfs.nf' params(
-    genome:"$params.genome", compress:true
-)
-
-//Genotype gVCF SNParray calling
 include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(
     genome:"$params.genome",  optional: "-all-sites", compress:true
 )
@@ -174,19 +169,13 @@ workflow {
         ExonCovSampleQC.out
     ).collect())
 
-    // GATK HaplotypeCaller SNParray target
+    // GATK HaplotypeCaller (SNParray target)
     PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
     GATK_HaplotypeCallerGVCF(
         Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}
         .groupTuple()
         .combine(PICARD_IntervalListToolsSNP.out.flatten())
     )
-    GATK_MergeGvcfs(
-        GATK_HaplotypeCallerGVCF.out.map{output_name, vcf_files, vcf_idx_files, interval_file -> [output_name, vcf_files, vcf_idx_files]}
-        .groupTuple()
-    )
-
-    // Genotyping GVCF SNParray target
     GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
     GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
 
@@ -195,15 +184,17 @@ workflow {
 
     // UPD analysis
     ParseChildFromFullTrio(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
-    UPD_IGV(ped_file, analysis_id, 
+    UPD_IGV(
+        ped_file,
+        analysis_id, 
         ParseChildFromFullTrio.out.splitCsv().flatten(), 
         GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect()
     )
 
     // IGV sessions
     Single_IGV(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join(''), analysis_id]})
-    Family_IGV(ParseChildFromFullTrio.out.splitCsv()
-        .flatten()
+    Family_IGV(
+         ParseChildFromFullTrio.out.splitCsv().flatten()
         .cross(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join('')]})
         .map{sample_id, refset -> [sample_id, refset[1], analysis_id, ped_file]}
     )
@@ -386,7 +377,6 @@ process ExomeDepthSummary {
         """
 }
 
-
 process Kinship {
     // Custom process to run Kinship tools
     // Container does not work
@@ -526,7 +516,6 @@ process Single_IGV {
         python ${params.exomedepth_path}/igv_xml_session.py single_igv ./ ${sample_id} ${analysis_id} ${refset}
         """
 }
-
 
 process Family_IGV {
     // Custom process to run Family IGV analysis
