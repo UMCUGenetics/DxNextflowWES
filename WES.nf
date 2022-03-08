@@ -325,7 +325,7 @@ process GetRefset{
         tuple(sample_id, stdout)
 
     script:
-        def rg_ids = rg_id.collect().join(" ")
+        def rg_ids = rg_id.toSorted().join("_")
         """
         source ${params.exomedepth_path}/venv/bin/activate
         python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset ${sample_id} ${rg_ids}
