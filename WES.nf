@@ -72,6 +72,7 @@ include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules
 include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(
     genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", compress:true, optional: ""
 )
+
 include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(
     genome:"$params.genome",  optional: "-all-sites", compress:true
 )
@@ -128,19 +129,16 @@ workflow {
     ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
-    ExonCovImportBam
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
-    )
-    ExonCovSampleQC(
-        ExonCovImportBam.out.join(ClarityEppIndications.out)
-            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
-            .groupTuple()
-    )
+    //ExonCovImportBam
+    //    Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+    //)
+    //ExonCovSampleQC(
+    //    ExonCovImportBam.out.join(ClarityEppIndications.out)
+    //        .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+    //        .groupTuple()
+    //)
 
     // ExomeDepth
-    rg_id = BWAMapping.out.map{sample_id, rg_id, bam_file, bai_file -> [sample_id, rg_id.split('_')[1]]}.unique().groupTuple()
-
-    GetRefset(rg_id)
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ExomeDepthSummary(analysis_id, ExomeDepth.out.HC_stats_log.collect())
 
@@ -160,14 +158,14 @@ workflow {
 
     VerifyBamID2(Sambamba_Merge.out.groupTuple())
 
-    MultiQC(analysis_id, Channel.empty().mix(
-        FastQC.out,
-        PICARD_CollectMultipleMetrics.out,
-        PICARD_EstimateLibraryComplexity.out,
-        PICARD_CollectHsMetrics.out,
-        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
-        ExonCovSampleQC.out
-    ).collect())
+    //MultiQC(analysis_id, Channel.empty().mix(
+    //    FastQC.out,
+    //    PICARD_CollectMultipleMetrics.out,
+    //    PICARD_EstimateLibraryComplexity.out,
+    //    PICARD_CollectHsMetrics.out,
+    //    VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
+    //    ExonCovSampleQC.out
+    //).collect())
 
     // GATK HaplotypeCaller (SNParray target)
     PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
@@ -179,32 +177,36 @@ workflow {
     GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
     GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
 
-    // BAF analysis
+    // BAF analysis per sample
     BAF_IGV(GATK_MergeVcfs.out)
 
-    // UPD analysis
-    ParseChildFromFullTrio(ped_file, Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]})
+    // UPD analysis per family
+    ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect())
     UPD_IGV(
         ped_file,
-        analysis_id, 
-        ParseChildFromFullTrio.out.splitCsv().flatten(), 
+        analysis_id,
+        ParseChildFromFullTrio.out.splitCsv().flatten(),
         GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect()
     )
 
-    // IGV sessions
-    Single_IGV(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join(''), analysis_id]})
-    Family_IGV(
-         ParseChildFromFullTrio.out.splitCsv().flatten()
-        .cross(GetRefset.out.map{sample_id, refset -> [sample_id, refset.split('\n').join('')]})
-        .map{sample_id, refset -> [sample_id, refset[1], analysis_id, ped_file]}
+
+    // IGV session per sample
+    GetRefset(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
+    Single_IGV(GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
+
+    // IGV sessions per family
+    Family_IGV(ParseChildFromFullTrio.out.splitCsv().flatten()
+        .combine(Sambamba_Merge.out.map{ sample_id, bam_file, bai_file -> [bam_file]}).groupTuple()
+        .map{sample_id, bam_files -> [sample_id, bam_files, ped_file, analysis_id]}
     )
 
-    TrendAnalysisTool(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
+
+    //TrendAnalysisTool(
+    //    GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //        .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //        .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //        .groupTuple()
+    //)
 
     //SavePedFile
     SavePedFile()
@@ -295,7 +297,7 @@ process ClarityEppIndications {
     tag {"ClarityEppExportSampleIndications ${analysis_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false  //Disable cache to force a clarity export restarting the workflow.
+    //cache = false  //Disable cache to force a clarity export restarting the workflow.
 
     input:
         val(sample_id)
@@ -308,27 +310,6 @@ process ClarityEppIndications {
         source ${params.clarity_epp_path}/venv/bin/activate
         python ${params.clarity_epp_path}/clarity_epp.py export sample_indications \
         -a ${sample_id} | cut -f 2 | grep -v 'Indication' | tr -d '\n'
-        """
-}
-
-process GetRefset{
-    // Custom process to run get exomedepth reference set from exomedepth db
-    tag {"GetRefset ${sample_id}"}
-    label 'GetRefset'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false
-
-    input:
-        tuple(sample_id, rg_id)
-
-    output:
-        tuple(sample_id, stdout)
-
-    script:
-        def rg_ids = rg_id.toSorted().join("_")
-        """
-        source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset ${sample_id} ${rg_ids}
         """
 }
 
@@ -438,6 +419,27 @@ process CreateHSmetricsSummary {
         python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
         """
 }
+
+process GetRefset{
+    // Custom process to run get exomedepth reference set from exomedepth db
+    tag {"GetRefset ${sample_id}"}
+    label 'GetRefset'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false   
+
+    input:
+        tuple(sample_id, path(bam_file))
+
+    output:
+        tuple(sample_id, stdout)
+
+    script:
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset_bam ${sample_id} ${bam_file} | tr -d '\n'
+        """
+}
+
 process BAF_IGV {
     // Custom process to run BAF analysis
     tag {"BAF_IGV ${output_name}"}
@@ -465,14 +467,15 @@ process ParseChildFromFullTrio {
 
     input:
         path(ped_file)
-        val(vcf_files)
+        val(sample_id)
 
     output:
         stdout emit: trio_sample
 
     script:
+        def sample_ids = sample_id.join(" ")
         """
-        python ${baseDir}/assets/parse_child_from_fulltrio.py ${ped_file} ${vcf_files}
+        python ${baseDir}/assets/parse_child_from_fulltrio.py ${ped_file} ${sample_ids} | tr -d '\n'
         """
 }
 
@@ -481,9 +484,9 @@ process UPD_IGV {
     tag {"UPD_IGV $trio_sample"}
     label 'UPD_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
-
+ 
     input:
-        path(ped_file)
+        val(ped_file)
         val(analysis_id)
         val(trio_sample)
         path(vcf_files)
@@ -503,9 +506,10 @@ process Single_IGV {
     tag {"Single_IGV $sample_id"}
     label 'Single_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
 
     input:
-        tuple(sample_id, refset, analysis_id)
+        tuple(sample_id, analysis_id, refset)
 
     output:
         path("*.xml", emit: Single_IGV_file)
@@ -522,17 +526,19 @@ process Family_IGV {
     tag {"Family_IGV $sample_id"}
     label 'Family_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
 
     input:
-        tuple(sample_id, refset, analysis_id, ped_file)
+        tuple(sample_id, path(bam_files), ped_file, analysis_id)
 
     output:
         path("*.xml", emit: Family_IGV_file)
 
     script:
+        def bam_files = bam_files.collect{"$it"}.join(" ")
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/igv_xml_session.py family_igv ./ ${ped_file} ${analysis_id} ${sample_id} ${refset}
+        python ${params.exomedepth_path}/igv_xml_session.py family_igv ./ ${ped_file} ${analysis_id} ${sample_id} ${bam_files}
         """
 }
 
