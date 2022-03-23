@@ -425,7 +425,6 @@ process GetRefset{
     tag {"GetRefset ${sample_id}"}
     label 'GetRefset'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false   
 
     input:
         tuple(sample_id, path(bam_file))
@@ -506,7 +505,6 @@ process Single_IGV {
     tag {"Single_IGV $sample_id"}
     label 'Single_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false
 
     input:
         tuple(sample_id, analysis_id, refset)
@@ -526,7 +524,6 @@ process Family_IGV {
     tag {"Family_IGV $sample_id"}
     label 'Family_IGV'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false
 
     input:
         tuple(sample_id, path(bam_files), ped_file, analysis_id)
