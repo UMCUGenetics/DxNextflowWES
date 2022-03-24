@@ -420,25 +420,6 @@ process CreateHSmetricsSummary {
         """
 }
 
-process GetRefset{
-    // Custom process to run get exomedepth reference set from exomedepth db
-    tag {"GetRefset ${sample_id}"}
-    label 'GetRefset'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-        tuple(sample_id, path(bam_file))
-
-    output:
-        tuple(sample_id, stdout)
-
-    script:
-        """
-        source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset_bam ${bam_file} | tr -d '\n'
-        """
-}
-
 process BAF_IGV {
     // Custom process to run BAF analysis
     tag {"BAF_IGV ${output_name}"}
@@ -497,6 +478,25 @@ process UPD_IGV {
         """
         source ${params.upd_path}/venv/bin/activate
         python ${params.upd_path}/make_UPD_igv.py ${ped_file} ${analysis_id} $trio_sample ${vcf_files} -c
+        """
+}
+
+process GetRefset{
+    // Custom process to run get exomedepth reference set from exomedepth db
+    tag {"GetRefset ${sample_id}"}
+    label 'GetRefset'
+    shell = ['/bin/bash', '-eo', 'pipefail']
+
+    input:
+        tuple(sample_id, path(bam_file))
+
+    output:
+        tuple(sample_id, stdout)
+
+    script:
+        """
+        source ${params.exomedepth_path}/venv/bin/activate
+        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset_bam ${bam_file} | tr -d '\n'
         """
 }
 
