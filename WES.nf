@@ -245,7 +245,7 @@ process ExonCovSampleQC {
 
 process ClarityEppIndications {
     // Custom process to run clarity_epp export sample_indications
-    tag {"ClarityEppExportSampleIndications ${analysis_id}"}
+    tag {"ClarityEppExportSampleIndications ${sample_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
     cache = false  //Disable cache to force a clarity export restarting the workflow.
