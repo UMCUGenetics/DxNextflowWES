@@ -5,7 +5,7 @@ from check_kinship import parse_ped
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Check kinship output based on ped file.')
     parser.add_argument('ped_file', type=argparse.FileType('r'), help='PED file')
-    parser.add_argument('samples_analysis', nargs='+', help='samples within the anlysis (space seperated)')
+    parser.add_argument('samples_analysis', nargs='+', help='samples within the analysis (space seperated)')
     arguments = parser.parse_args()
 
     samples = parse_ped(arguments.ped_file)
