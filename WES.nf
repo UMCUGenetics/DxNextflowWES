@@ -129,7 +129,7 @@ workflow {
     ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
-    ExonCovImportBam
+    ExonCovImportBam(
         Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
     )
     ExonCovSampleQC(
@@ -444,6 +444,7 @@ process ParseChildFromFullTrio {
     tag {"ParseChildFromFullTrio ${analysis_id}"}
     label 'ParseChildFromFullTrio'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
 
     input:
         path(ped_file)
@@ -486,6 +487,7 @@ process GetRefset{
     tag {"GetRefset ${sample_id}"}
     label 'GetRefset'
     shell = ['/bin/bash', '-eo', 'pipefail']
+    cache = false
 
     input:
         tuple(sample_id, path(bam_file))
