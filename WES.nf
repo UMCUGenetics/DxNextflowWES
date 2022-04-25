@@ -297,7 +297,7 @@ process ClarityEppIndications {
     tag {"ClarityEppExportSampleIndications ${analysis_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    //cache = false  //Disable cache to force a clarity export restarting the workflow.
+    cache = false  //Disable cache to force a clarity export restarting the workflow.
 
     input:
         val(sample_id)
