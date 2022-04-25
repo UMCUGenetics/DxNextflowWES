@@ -129,14 +129,14 @@ workflow {
     ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
-    //ExonCovImportBam(
-    //    Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
-    //)
-    //ExonCovSampleQC(
-    //    ExonCovImportBam.out.join(ClarityEppIndications.out)
-    //        .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
-    //        .groupTuple()
-    //)
+    ExonCovImportBam(
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+    )
+    ExonCovSampleQC(
+        ExonCovImportBam.out.join(ClarityEppIndications.out)
+            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+            .groupTuple()
+    )
 
     // ExomeDepth
     ExomeDepth(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
@@ -158,14 +158,14 @@ workflow {
 
     VerifyBamID2(Sambamba_Merge.out.groupTuple())
 
-    //MultiQC(analysis_id, Channel.empty().mix(
-    //    FastQC.out,
-    //    PICARD_CollectMultipleMetrics.out,
-    //    PICARD_EstimateLibraryComplexity.out,
-    //    PICARD_CollectHsMetrics.out,
-    //    VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
-    //    ExonCovSampleQC.out
-    //).collect())
+    MultiQC(analysis_id, Channel.empty().mix(
+        FastQC.out,
+        PICARD_CollectMultipleMetrics.out,
+        PICARD_EstimateLibraryComplexity.out,
+        PICARD_CollectHsMetrics.out,
+        VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
+        ExonCovSampleQC.out
+    ).collect())
 
     // GATK HaplotypeCaller (SNParray target)
     PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
@@ -201,12 +201,12 @@ workflow {
     )
 
 
-    //TrendAnalysisTool(
-    //    GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-    //        .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-    //        .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-    //        .groupTuple()
-    //)
+    TrendAnalysisTool(
+        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+            .groupTuple()
+    )
 
     //SavePedFile
     SavePedFile()
@@ -297,7 +297,7 @@ process ClarityEppIndications {
     tag {"ClarityEppExportSampleIndications ${analysis_id}"}
     label 'ClarityEpp'
     shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false  //Disable cache to force a clarity export restarting the workflow.
+    //cache = false  //Disable cache to force a clarity export restarting the workflow.
 
     input:
         val(sample_id)
