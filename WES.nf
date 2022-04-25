@@ -72,7 +72,6 @@ include IntervalListTools as PICARD_IntervalListToolsSNP from './NextflowModules
 include HaplotypeCallerGVCF as GATK_HaplotypeCallerGVCF from './NextflowModules/GATK/4.2.1.0/HaplotypeCaller.nf' params(
     genome:"$params.genome", emit_ref_confidence: "BP_RESOLUTION", compress:true, optional: ""
 )
-
 include GenotypeGVCF as GATK_GenotypeGVCF from "./NextflowModules/GATK/4.2.1.0/GenotypeGvcfs.nf" params(
     genome:"$params.genome",  optional: "-all-sites", compress:true
 )
@@ -189,7 +188,6 @@ workflow {
         GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect()
     )
 
-
     // IGV session per sample
     GetRefset(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
     Single_IGV(GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
@@ -199,7 +197,6 @@ workflow {
         .combine(Sambamba_Merge.out.map{ sample_id, bam_file, bai_file -> [bam_file]}).groupTuple()
         .map{sample_id, bam_files -> [sample_id, bam_files, ped_file, analysis_id]}
     )
-
 
     TrendAnalysisTool(
         GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
