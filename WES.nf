@@ -495,7 +495,7 @@ process GetRefset{
     script:
         """
         source ${params.exomedepth_path}/venv/bin/activate
-        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset_bam ${bam_file} | tr -d '\n'
+        python ${params.exomedepth_path}/exomedepth_db.py add_sample_return_refset_bam ${bam_file} --print_refset_stdout | tr -d '\n'
         """
 }
 
