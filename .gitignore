@@ -10,3 +10,6 @@ fingerprint_out
 
 # VSCode
 .vscode/
+
+# General
+.DS_Store
