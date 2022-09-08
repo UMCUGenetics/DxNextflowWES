@@ -65,40 +65,40 @@ workflow {
     )
 
     // GATK IndelRealigner
-    GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
-    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
-    Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
-    Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
+    // GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    // GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
+    // Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
+    // Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK UnifiedGenotyper (fingerprint)
-    GATK_UnifiedGenotyper(Sambamba_Merge.out)
+    GATK_UnifiedGenotyper(Sambamba_MarkdupMerge.out)
 
     // Clarity epp
-    ClarityEppIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    ClarityEppIndications(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
     ExonCovImportBam(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+        Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
     )
 
     // QC
     FastQC(fastq_files)
 
-    PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
-    PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
-    PICARD_CollectHsMetrics(Sambamba_Merge.out)
+    PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
+    PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
+    PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
     CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
 
-    Sambamba_Flagstat(Sambamba_Merge.out)
+    Sambamba_Flagstat(Sambamba_MarkdupMerge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
     ExonCovSampleQC(
         ExonCovImportBam.out.join(ClarityEppIndications.out)
-            .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
-            .groupTuple()
+        .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
+        .groupTuple()
     )
 
-    VerifyBamID2(Sambamba_Merge.out.groupTuple())
+    VerifyBamID2(Sambamba_MarkdupMerge.out)
 
     MultiQC(analysis_id, Channel.empty().mix(
         FastQC.out,
