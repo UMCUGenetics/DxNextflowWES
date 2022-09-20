@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-workflow_path='/hpc/diaggen/software/production/DxNextflowWES'
+workflow_path='/hpc/diaggen/projects/single_sample/DxNextflowWES'
 
 # Set input and output dirs
 input=`realpath -e $1`
@@ -33,7 +33,7 @@ module load Java/1.8.0_60
 
 /hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
---fastq_path $input \
+--bam_path $input \
 --outdir $output \
 --email $email \
 -profile slurm \
