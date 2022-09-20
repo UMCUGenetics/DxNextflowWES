@@ -43,7 +43,7 @@ include CallCNV as ExomeDepth_CallCNV from './CustomModules/ExomeDepth/CallCNV.n
 include GetRefset as ExomeDepth_GetRefset from './CustomModules/ExomeDepth/GetRefset.nf'
 include SingleIGV as ExomeDepth_SingleIGV from './CustomModules/ExomeDepth/IGV.nf'
 include FamilyIGV as ExomeDepth_FamilyIGV from './CustomModules/ExomeDepth/IGV.nf'
-include Summary as ExomeDepth_Summary from './CustomModules/ExomeDepth/ExomeDepthSummary.nf'
+include Summary as ExomeDepth_Summary from './CustomModules/ExomeDepth/Summary.nf'
 include IGV as UPD_IGV from './CustomModules/UPD/IGV.nf'
 include Kinship from './CustomModules/Utils/Kinship.nf'
 include ParseChildFromFullTrio from './CustomModules/Utils/ParseChildFromFullTrio.nf'
