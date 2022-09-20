@@ -101,7 +101,7 @@ workflow {
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
     ExonCovSampleQC(
-        ExonCovImportBam.out.join(ClarityEppIndications.out)
+        ExonCovImportBam.out.join(ClarityEppSampleIndications.out)
         .map{sample_id, exoncov_id, indication -> [analysis_id, exoncov_id, indication]}
         .groupTuple()
     )
