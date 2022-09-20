@@ -47,6 +47,14 @@ include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
 )
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
+// CustomModules
+include ClarityEppSampleIndications from './CustomModules/ClarityEpp/SampleIndications.nf'
+include ExonCovImportBam from './CustomModules/ExonCov/ImportBam.nf'
+include ExonCovSampleQC from './CustomModules/ExonCov/SampleQC.nf'
+include CreateHSmetricsSummary from './CustomModules/Utils/CreateHSmetricsSummary.nf'
+include GetStatsFromFlagstat from './CustomModules/Utils/GetStatsFromFlagstat.nf'
+include VersionLogPreprocess from './CustomModules/Utils/VersionLog.nf'
+
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
 
@@ -65,16 +73,16 @@ workflow {
     )
 
     // GATK IndelRealigner
-    // GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
-    // GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
-    // Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
-    // Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
+    GATK_RealignerTargetCreator(Sambamba_MarkdupMerge.out.combine(chromosomes))
+    GATK_IndelRealigner(Sambamba_MarkdupMerge.out.combine(GATK_RealignerTargetCreator.out, by: 0))
+    Sambamba_ViewUnmapped(Sambamba_MarkdupMerge.out)
+    Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_MarkdupMerge.out)
 
     // Clarity epp
-    ClarityEppIndications(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    ClarityEppSampleIndications(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
     ExonCovImportBam(
@@ -110,7 +118,7 @@ workflow {
     ).collect())
 
     // Create log files: Repository versions and Workflow params
-    VersionLog()
+    VersionLogPreprocess()
     Workflow_ExportParams()
 }
 
@@ -141,134 +149,5 @@ workflow.onComplete {
     }
 }
 
-// Custom processes
-process ExonCovImportBam {
-    // Custom process to run ExonCov import_bam
-    tag {"ExonCov ImportBam ${sample_id}"}
-    label 'ExonCov'
-    label 'ExonCov_ImportBam'
-    shell = ['/bin/bash', '-eo', 'pipefail']
 
-    input:
-        tuple(analysis_id, sample_id, path(bam_file), path(bai_file))
 
-    output:
-        tuple(sample_id, stdout)
-
-    script:
-        """
-        source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py import_bam \
-        --threads ${task.cpus} \
-        --overwrite \
-        --print_sample_id \
-        --exon_bed ${params.dxtracks_path}/${params.exoncov_bed} \
-        ${analysis_id} WES ${bam_file} | tr -d '\n'
-        """
-}
-
-process ExonCovSampleQC {
-    // Custom process to run ExonCov sample_qc
-    tag {"ExonCov Sample QC ${analysis_id}"}
-    label 'ExonCov'
-    label 'ExonCov_SampleQC'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-
-    input:
-        tuple(analysis_id, sample_ids, indications)
-
-    output:
-        path("${analysis_id}.ExonCovQC_check.out")
-
-    script:
-        def samples = sample_ids.collect{"$it"}.join(" ")
-        def panels = indications.collect{"$it"}.join(" ")
-        """
-        source ${params.exoncov_path}/venv/bin/activate
-        python ${params.exoncov_path}/ExonCov.py sample_qc \
-        -s ${samples} -p ${panels} > ${analysis_id}.ExonCovQC_check.out
-        """
-}
-
-process ClarityEppIndications {
-    // Custom process to run clarity_epp export sample_indications
-    tag {"ClarityEppExportSampleIndications ${sample_id}"}
-    label 'ClarityEpp'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false  //Disable cache to force a clarity export restarting the workflow.
-
-    input:
-        val(sample_id)
-
-    output:
-        tuple(sample_id, stdout)
-
-    script:
-        """
-        source ${params.clarity_epp_path}/venv/bin/activate
-        python ${params.clarity_epp_path}/clarity_epp.py export sample_indications \
-        -a ${sample_id} | cut -f 2 | grep -v 'Indication' | tr -d '\n'
-        """
-}
-
-process GetStatsFromFlagstat {
-    // Custom process to run get_stats_from_flagstat.pl
-    tag {"GetStatsFromFlagstat"}
-    label 'GetStatsFromFlagstat'
-    shell = ['/bin/bash', '-euo', 'pipefail']
-
-    input:
-        path(flagstat_files)
-
-    output:
-        path('run_stats.txt')
-
-    script:
-        """
-        python ${baseDir}/assets/get_stats_from_flagstat.py ${flagstat_files} > run_stats.txt
-        """
-}
-
-process CreateHSmetricsSummary {
-    // Custom process to run get_stats_from_flagstat.pl
-    tag {"CreateHSmetricsSummary"}
-    label 'CreateHSmetricsSummary'
-    shell = ['/bin/bash', '-euo', 'pipefail']
-
-    input:
-        path(hsmetrics_files)
-
-    output:
-        path('HSMetrics_summary.txt')
-
-    script:
-        """
-        python ${baseDir}/assets/create_hsmetrics_summary.py ${hsmetrics_files} > HSMetrics_summary.txt
-        """
-}
-
-process VersionLog {
-    // Custom process to log repository versions
-    tag {"VersionLog ${analysis_id}"}
-    label 'VersionLog'
-    shell = ['/bin/bash', '-eo', 'pipefail']
-    cache = false  //Disable cache to force a new version log when restarting the workflow.
-
-    output:
-        path('repository_version.log')
-
-    script:
-        """
-        echo 'DxNextflowWes' > repository_version.log
-        git --git-dir=${workflow.projectDir}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
-        echo 'Dx_tracks' >> repository_version.log
-        git --git-dir=${params.dxtracks_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
-        echo 'ExonCov' >> repository_version.log
-        git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
-        echo 'clarity_epp' >> repository_version.log
-        git --git-dir=${params.clarity_epp_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-        """
-}
