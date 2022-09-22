@@ -12,6 +12,6 @@ process SavePedFile {
 
     script:
         """
-        cp ${ped_file} ./
+        cp --remove-destination "$(readlink ${ped_file})" ./
         """
 }
