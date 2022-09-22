@@ -111,7 +111,7 @@ workflow {
     )
 
     //SavePedFile
-    SavePedFile()
+    SavePedFile(ped_file)
 
     // Create log files: Repository versions and Workflow params
     VersionLog()
