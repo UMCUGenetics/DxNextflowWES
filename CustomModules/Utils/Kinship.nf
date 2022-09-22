@@ -10,6 +10,7 @@ process Kinship {
 
     input:
         tuple(analysis_id, path(vcf_file), path(vcf_index))
+        path(ped_file)
 
     output:
         tuple(analysis_id, path("${analysis_id}.kinship"), path("${analysis_id}.kinship_check.out"))

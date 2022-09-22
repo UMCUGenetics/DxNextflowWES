@@ -97,7 +97,7 @@ workflow {
     )
 
     // Kinship
-    Kinship(GATK_CombineVariants.out)
+    Kinship(GATK_CombineVariants.out, ped_file)
 
     // BAF analysis per sample
     BAF_IGV(GATK_MergeVcfs.out)
