@@ -8,7 +8,7 @@ process SavePedFile {
         path(ped_file)
 
     output:
-        path("*.ped")
+        path("*.ped", includeInputs=True)
 
     script:
         """
