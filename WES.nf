@@ -72,6 +72,16 @@ workflow {
         input_bam_files.map{sample_id, bam_file, bai_file -> [sample_id]})
     )
 
+    // GATK HaplotypeCaller (SNParray target)
+    PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
+    GATK_HaplotypeCallerGVCF(
+        input_bam_files.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}
+        .groupTuple()
+        .combine(PICARD_IntervalListToolsSNP.out.flatten())
+    )
+    GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
+    GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
+
     // ExomeDepth
     ExomeDepth_CallCNV(input_bam_files.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ExomeDepth_Summary(analysis_id, ExomeDepth_CallCNV.out.HC_stats_log.collect())
@@ -87,16 +97,6 @@ workflow {
 
     // Kinship
     Kinship(GATK_CombineVariants.out)
-
-    // GATK HaplotypeCaller (SNParray target)
-    PICARD_IntervalListToolsSNP(Channel.fromPath("$params.dxtracks_path/$params.gatk_hc_interval_list_snparray"))
-    GATK_HaplotypeCallerGVCF(
-        input_bam_files.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}
-        .groupTuple()
-        .combine(PICARD_IntervalListToolsSNP.out.flatten())
-    )
-    GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
-    GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
 
     // BAF analysis per sample
     BAF_IGV(GATK_MergeVcfs.out)
