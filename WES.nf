@@ -47,6 +47,7 @@ include Summary as ExomeDepth_Summary from './CustomModules/ExomeDepth/Summary.n
 include IGV as UPD_IGV from './CustomModules/UPD/IGV.nf'
 include Kinship from './CustomModules/Utils/Kinship.nf'
 include ParseChildFromFullTrio from './CustomModules/Utils/ParseChildFromFullTrio.nf'
+include SavePedFile from './CustomModules/Utils/SavePedFile.nf'
 include VersionLog from './CustomModules/Utils/VersionLog.nf'
 
 def input_bam_files = extractBamFromDir(params.bam_path)
