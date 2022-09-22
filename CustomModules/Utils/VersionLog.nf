@@ -42,12 +42,6 @@ process VersionLog {
         echo 'Dx_tracks' >> repository_version.log
         git --git-dir=${params.dxtracks_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
-        echo 'ExonCov' >> repository_version.log
-        git --git-dir=${params.exoncov_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
-        echo 'clarity_epp' >> repository_version.log
-        git --git-dir=${params.clarity_epp_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
         echo 'ExomeDepth' >> repository_version.log
         git --git-dir=${params.exomedepth_path}/../.git log --pretty=oneline --decorate -n 2 >> repository_version.log
 
@@ -56,8 +50,5 @@ process VersionLog {
 
         echo 'Dx_BAF' >> repository_version.log
         git --git-dir=${params.baf_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
-
-        echo 'TrendAnalysis' >> repository_version.log
-        git --git-dir=${params.trend_analysis_path}/.git log --pretty=oneline --decorate -n 2 >> repository_version.log
         """
 }
