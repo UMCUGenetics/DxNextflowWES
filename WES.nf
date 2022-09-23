@@ -136,7 +136,6 @@ workflow.onComplete {
             to: params.email.trim(),
             subject: subject,
             body: email_html,
-            attach: "${params.outdir}/QC/${analysis_id}_multiqc_report.html"
         )
 
     } else {
