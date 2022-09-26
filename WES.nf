@@ -223,7 +223,7 @@ workflow {
     // )
 
     // QC - Kinship
-    Kinship(GATK_CombineVariants.out)
+    Kinship(GATK_CombineVariants.out, ped_file)
 
     //SavePedFile
     SavePedFile(ped_file)
