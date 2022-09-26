@@ -215,12 +215,12 @@ workflow {
     ).collect())
 
     // QC - TrendAnalysis upload
-    TrendAnalysis(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
+    // TrendAnalysis(
+    //     GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
+    //         .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
+    //         .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
+    //         .groupTuple()
+    // )
 
     // QC - Kinship
     Kinship(GATK_CombineVariants.out)
