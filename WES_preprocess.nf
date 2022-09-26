@@ -79,25 +79,25 @@ workflow {
     Sambamba_Merge(GATK_IndelRealigner.out.mix(Sambamba_ViewUnmapped.out).groupTuple())
 
     // GATK UnifiedGenotyper (fingerprint)
-    GATK_UnifiedGenotyper(Sambamba_MarkdupMerge.out)
+    GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // Clarity epp
-    ClarityEppSampleIndications(Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    ClarityEppSampleIndications(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
 
     // ExonCov
     ExonCovImportBam(
-        Sambamba_MarkdupMerge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]}
     )
 
     // QC
     FastQC(fastq_files)
 
-    PICARD_CollectMultipleMetrics(Sambamba_MarkdupMerge.out)
-    PICARD_EstimateLibraryComplexity(Sambamba_MarkdupMerge.out)
-    PICARD_CollectHsMetrics(Sambamba_MarkdupMerge.out)
+    PICARD_CollectMultipleMetrics(Sambamba_Merge.out)
+    PICARD_EstimateLibraryComplexity(Sambamba_Merge.out)
+    PICARD_CollectHsMetrics(Sambamba_Merge.out)
     CreateHSmetricsSummary(PICARD_CollectHsMetrics.out.collect())
 
-    Sambamba_Flagstat(Sambamba_MarkdupMerge.out)
+    Sambamba_Flagstat(Sambamba_Merge.out)
     GetStatsFromFlagstat(Sambamba_Flagstat.out.collect())
 
     ExonCovSampleQC(
@@ -106,7 +106,7 @@ workflow {
         .groupTuple()
     )
 
-    VerifyBamID2(Sambamba_MarkdupMerge.out)
+    VerifyBamID2(Sambamba_Merge.out)
 
     MultiQC(analysis_id, Channel.empty().mix(
         FastQC.out,
