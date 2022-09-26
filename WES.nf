@@ -156,7 +156,7 @@ workflow {
 
     // ExomeDepth IGV sessions
     ExomeDepth_GetRefset(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
-    ExomeDepth_SingleIGV(GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
+    ExomeDepth_SingleIGV(ExomeDepth_GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
     ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect())
     ExomeDepth_FamilyIGV(ParseChildFromFullTrio.out.splitCsv().flatten()
         .combine(Sambamba_Merge.out.map{ sample_id, bam_file, bai_file -> [bam_file]}).groupTuple()
