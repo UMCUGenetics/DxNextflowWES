@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-workflow_path='/hpc/diaggen/projects/refactor_custom_modules/DxNextflowWES'
+workflow_path='/hpc/diaggen/software/production/DxNextflowWES'
 
 # Set input and output dirs
 input=`realpath -e $1`
