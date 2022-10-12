@@ -1,4 +1,4 @@
-process TrendAnalysis{
+process TrendAnalysis {
     // Custom process to run Trend_Analysis_tool
     tag {"TrendAnalysis ${analysis_id}"}
     label 'TrendAnalysis'

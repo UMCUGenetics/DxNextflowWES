@@ -1,11 +1,7 @@
 process Kinship {
     // Custom process to run Kinship tools
-    // Container does not work
-    // king: run.c:355: main: Unexpected error: No such file or directory.
-    // Aborted (core dumped)
     tag {"Kinship ${analysis_id}"}
     label 'Kinship'
-    //container = '/hpc/diaggen/software/guix_containers/kinship.sif'
     shell = ['/bin/bash', '-euo', 'pipefail']
 
     input:
