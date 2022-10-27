@@ -17,7 +17,7 @@ touch workflow.running
 
 sbatch <<EOT
 #!/bin/bash
-#SBATCH --time=24:00:00
+#SBATCH --time=36:00:00
 #SBATCH --nodes=1
 #SBATCH --mem 5G
 #SBATCH --gres=tmpspace:10G
