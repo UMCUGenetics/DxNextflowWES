@@ -1,21 +1,24 @@
 metrics:
   - filename: "multiqc_picard_HsMetrics.txt"
     qc_col: "PCT_TARGET_BASES_20X"
-    threshold: 0.99
+    threshold: 0.95
     operator: "<="
-    # special report_cols '@all' to select all columns.
     report_cols: ["Sample", "PCT_TARGET_BASES_20X"]
+    sample_cols: ["Sample"]
     title: "Coverage"
   - filename: "multiqc_verifybamid.txt"
     qc_col: "FREEMIX"
-    threshold: 0.000002
+    threshold: 0.04
     operator: ">"
     report_cols: ["Sample", "FREEMIX"]
+    sample_cols: ["Sample"]
     title: "Contamination"
   - filename: ".*.kinship_check.out$"
     qc_col: "status"
     threshold: "FAIL"
     operator: "=="
+    # special report_cols '@all' to select all columns.
     report_cols: '@all'
+    sample_cols: ["sample_1", "sample_2"]
     comment: "#"
     title: "Kinship"
