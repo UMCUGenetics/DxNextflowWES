@@ -53,7 +53,7 @@ def read_yaml(yaml_file):
 def check_allowed_operators(qc_operator):
     operators = ["<", "<=", ">", ">=", "==", "!=", "match"]
     if qc_operator not in operators:
-        raise ValueError(f"Unsupported operator provided: {qc_operator}. Please select: {operators}")
+        raise ValueError(f"Unsupported operator provided: {qc_operator}. Please select from: {operators}")
 
 
 def check_required_keys_metrics(qc_settings):
