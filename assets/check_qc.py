@@ -9,29 +9,34 @@ from pandas import DataFrame, read_csv
 import yaml
 
 # custom libraries alphabetic order
-from assets.utils import non_empty_existing_file
+from utils import non_empty_existing_path
+
 
 def parse_arguments_and_check(args_in):
     parser = argparse.ArgumentParser(
         description="Check and summarize sample quality using qc metrics and their thresholds."
     )
     parser.add_argument(
-        "input_files", nargs="+", type=non_empty_existing_file,
-        help="Input files containing a QC metric."
-    )
-    parser.add_argument(
-        "-s", "--settings",
-        type=list,
-        required=True, # can't be a positional argument, due to input_files nargs = '+'. 
+        "settings",
+        type=non_empty_existing_path,
         default=str(Path(__file__).parent) + "/qc_settings.yaml",
         help="QC settings specifying at least the filename, which qc_col, the threshold and the operator."
     )
     parser.add_argument(
-        "-o", "--output_file",
-        type=non_empty_existing_file,
-        required=True,  # can't be a positional argument, due to input_files nargs = '+'.
-        default="failed.csv",
-        help="QC check output file for all failed instances."
+        "output_path",
+        type=non_empty_existing_path,
+        default=".",
+        help="QC check output path for all output files."
+    )
+    parser.add_argument(
+        "output_prefix",
+        type=str,
+        default="qc_check",
+        help="QC check output prefix for all output file names."
+    )
+    parser.add_argument(
+        "input_files", nargs="+", type=non_empty_existing_path,
+        help="Input files containing a QC metric."
     )
     args = parser.parse_args(args_in)
     return args
