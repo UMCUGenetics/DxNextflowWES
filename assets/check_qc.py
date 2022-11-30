@@ -74,7 +74,8 @@ def retrieve_failed_qc(qc_metric, qc_col, qc_operator, qc_threshold, report_cols
     return qc_subset
 
 
-def check_qc(input_files, settings, output_file):
+def check_qc(input_files, settings, output_path, output_prefix):
+    # A single qc metric file can be used multiple times, by defining a metric section for each check in the qc settings.
     qc_settings = read_yaml(settings)
     check_required_keys_metrics(qc_settings)
     with open(output_file, 'w') as f:
@@ -94,11 +95,6 @@ def check_qc(input_files, settings, output_file):
                 )  # ["qc_title", "qc_check", "qc_input"]
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     args = parse_arguments_and_check(args_in=sys.argv[1:])
-    check_qc(args.input_files, args.settings, args.output_file)
-
-# settings = "/Users/ejong19/repos/DxNextflowWES/assets/qc_settings.yaml"
-# input_files = ["/Users/ejong19/Downloads/multiqc_picard_HsMetrics.txt", "/Users/ejong19/Downloads/multiqc_verifybamid.txt",
-#                "/Users/ejong19/Downloads/221111_A00295_0680_BHGCM3DMXY_1.kinship_check.out"]
-# output_file = '/Users/ejong19/Downloads/failed.csv'
+    check_qc(args.input_files, args.settings, args.output_path, args.output_prefix)
