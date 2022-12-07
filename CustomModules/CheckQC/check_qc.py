@@ -1,6 +1,8 @@
 #! /usr/bin/env python
 # import statements, alphabetic order of main package.
 import argparse
+from errno import ENOENT as errno_ENOENT
+from os import strerror as os_strerror
 from pathlib import Path
 import re
 import sys
@@ -9,8 +11,14 @@ import sys
 from pandas import DataFrame, merge, read_csv
 import yaml
 
-# custom libraries alphabetic order
-from utils import non_empty_existing_path
+
+def non_empty_existing_path(file_or_dir):
+    input_path = Path(file_or_dir)
+    if not input_path.is_file() and not input_path.is_dir():
+        raise FileNotFoundError(errno_ENOENT, os_strerror(errno_ENOENT), file_or_dir)
+    elif not input_path.is_dir() and not input_path.stat().st_size:
+        raise OSError("File is empty.")
+    return file_or_dir
 
 
 def parse_arguments_and_check(args_in):
