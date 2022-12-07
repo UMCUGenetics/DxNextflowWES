@@ -33,13 +33,11 @@ def parse_arguments_and_check(args_in):
     parser.add_argument(
         "output_path",
         type=non_empty_existing_path,
-        default=".",
         help="QC check output path for all output files."
     )
     parser.add_argument(
         "output_prefix",
         type=str,
-        default="qc_check",
         help="QC check output prefix for all output file names."
     )
     parser.add_argument(
