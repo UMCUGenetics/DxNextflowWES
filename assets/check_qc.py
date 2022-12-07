@@ -6,7 +6,7 @@ import re
 import sys
 
 # third party libraries alphabetic order of main package.
-from pandas import concat, read_csv, DataFrame
+from pandas import DataFrame, merge, read_csv
 import yaml
 
 # custom libraries alphabetic order
@@ -77,8 +77,8 @@ def get_columns_to_report(qc_report_cols, qc_metric_cols, qc_col):
         raise ValueError(f"Some column names provided as report_cols do not exists: {not_existing_cols}")
     if not isinstance(qc_report_cols, str) and not isinstance(qc_report_cols, list):
         raise TypeError(f"{qc_report_cols} not string, list or '@all'")
-    qc_report_cols.remove(qc_col)
-    qc_report_cols.append("qc_value")
+    qc_report_cols = list(map(lambda x: x.replace(qc_col, "qc_value"), qc_report_cols))
+    qc_report_cols.insert(0, "qc_title")
     return qc_report_cols
 
 
@@ -86,7 +86,7 @@ def add_and_rename_columns(qc_metric, qc_title, qc_col, qc_operator, qc_threshol
     qc_metric_assigned = qc_metric.assign(
         qc_title=qc_title.lower(),
         qc_status="PASS",
-        qc_check=f"{qc_col} {qc_operator} {qc_threshold}",
+        qc_check=f"{qc_threshold} {qc_operator} {qc_col}",
         qc_msg="",
     )
     qc_metric_out = qc_metric_assigned.rename(columns={qc_col: "qc_value"})
@@ -110,7 +110,7 @@ def get_failed_rows(qc_metric, qc_col, qc_operator, qc_threshold):
 
 
 def add_failed_samples_metric(qc_metric, failed_rows, report_cols, sample_cols):
-    qc_metric_out = DataFrame(columns=["sample", "qc_title", "qc_check", "qc_status", "qc_msg", "qc_value"])
+    qc_metric_out = DataFrame(columns=["sample", "qc_check", "qc_status", "qc_msg", "qc_value"])
     failed_samples = []
     if failed_rows.to_list():
         failed_samples = list(qc_metric.loc[failed_rows, sample_cols].values.ravel())
@@ -126,6 +126,9 @@ def add_failed_samples_metric(qc_metric, failed_rows, report_cols, sample_cols):
                     qc_metric
                     .rename(columns={sample_col: "sample"})
                     .loc[failed_rows, qc_metric_out.columns.to_list()]
+                    .groupby(["sample", "qc_check", "qc_status"])
+                    .agg(lambda val: ';'.join(val.astype(str)))  # or .agg(lambda val: val.to_list())
+                    .reset_index()
                 )
             )
         # Drop failed samples current metric
@@ -148,26 +151,15 @@ def add_passed_samples_metric(qc_metric, qc_metric_out, sample_cols):
         )
     # In case 'multiple sample qc check', 
     # output could contain duplicate rows for individual samples used in multiple comparisons.
-    return qc_metric_out.sort_values(by=["qc_title", "qc_check", "qc_status"]).drop_duplicates(keep="first")
+    return qc_metric_out.sort_values(by=["qc_check", "qc_status"]).drop_duplicates(keep="first")
 
 
 def create_and_write_output(qc_output, output_path, output_prefix):
-    # Write output all qc checks
-    (
-        qc_output[["sample", "qc_title", "qc_status", "qc_check", "qc_value", "qc_msg"]]
-        .to_csv(output_path + output_prefix + "_all_qc.csv", index=False, header=True)
-    )
-    # Transform table to wide using pivot
-    qc_out_wide = qc_output.pivot(index="sample", columns=["qc_title", "qc_check"], values="qc_status")
-    # Rename multi-indexed columns
-    qc_out_wide.columns = [f"{qc_title}:{qc_check}".replace(" ", "_") for qc_title, qc_check in qc_out_wide.columns]
     # Add qc_summary
-    qc_out_wide.insert(0, "qc_summary", "PASS")
-    qc_out_wide.loc[qc_out_wide.isin(["FAIL"]).any(axis=1), "qc_summary"] = "FAIL"
-    # Reset index to create a column 'sample'.
-    qc_out_wide.reset_index(inplace=True)
+    qc_output.insert(1, "qc_summary", "PASS")
+    qc_output.loc[qc_output.isin(["FAIL"]).any(axis=1), "qc_summary"] = "FAIL"
     # Write summary output
-    qc_out_wide.to_csv(output_path + output_prefix + "_summary.csv", index=False, header=True)
+    qc_output.to_csv(output_path + output_prefix + "_summary.csv", index=False, header=True)
 
 
 def check_qc(input_files, settings, output_path, output_prefix):
@@ -186,11 +178,19 @@ def check_qc(input_files, settings, output_path, output_prefix):
                 qc_metric_edit, failed_rows, report_cols, qc["sample_cols"]
             )
             qc_metric_judged = add_passed_samples_metric(qc_metric_subset, qc_metric_judged, qc["sample_cols"])
+            # Rename columns
+            suffix = f"_{qc['title'].lower()}"
+            qc_judged_renamed = qc_metric_judged.add_suffix(suffix).rename(columns={f"sample{suffix}": "sample"})
             # Concatenate/merge metric output
             try:
-                output = concat([output, qc_metric_judged], axis=0)
+                output = merge(output, qc_judged_renamed, on="sample", how="outer")
             except NameError:  # first time:
-                output = qc_metric_judged
+                output = merge(
+                    DataFrame(qc_metric_judged['sample'], columns=["sample"]),
+                    qc_judged_renamed,
+                    on="sample",
+                    how="outer"
+                )
     create_and_write_output(output, output_path, output_prefix)
 
 
