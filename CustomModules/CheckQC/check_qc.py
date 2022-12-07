@@ -18,6 +18,8 @@ def non_empty_existing_path(file_or_dir):
         raise FileNotFoundError(errno_ENOENT, os_strerror(errno_ENOENT), file_or_dir)
     elif not input_path.is_dir() and not input_path.stat().st_size:
         raise OSError("File is empty.")
+    elif input_path.is_dir() and input_path[::-1][0] != "/":
+        return f"{file_or_dir}/"
     return file_or_dir
 
 
