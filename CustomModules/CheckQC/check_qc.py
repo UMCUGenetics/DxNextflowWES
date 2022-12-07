@@ -20,7 +20,6 @@ def parse_arguments_and_check(args_in):
     parser.add_argument(
         "settings",
         type=non_empty_existing_path,
-        default=str(Path(__file__).parent) + "/qc_settings.yaml",
         help="QC settings specifying at least the filename, which qc_col, the threshold and the operator."
     )
     parser.add_argument(
