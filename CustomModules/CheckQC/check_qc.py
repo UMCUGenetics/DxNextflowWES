@@ -1,5 +1,5 @@
 #! /usr/bin/env python
-# import statements, alphabetic order of main package.
+# Import statements, alphabetic order of main package.
 import argparse
 from errno import ENOENT as errno_ENOENT
 from os import strerror as os_strerror
@@ -7,7 +7,7 @@ from pathlib import Path
 import re
 import sys
 
-# third party libraries alphabetic order of main package.
+# Third party libraries alphabetic order of main package.
 from pandas import DataFrame, merge, read_csv
 import yaml
 
@@ -101,14 +101,14 @@ def add_and_rename_columns(qc_metric, qc_title, qc_col, qc_operator, qc_threshol
 
 
 def get_failed_rows(qc_metric, qc_col, qc_operator, qc_threshold):
-    # select failed rows using qc_threshold regex pattern and qc_operator 'match'
+    # Select failed rows using qc_threshold regex pattern and qc_operator 'match'
     if qc_operator == "match" and isinstance(qc_threshold, str):
         return qc_metric["qc_value"].str.match(qc_threshold)
-    elif isinstance(qc_threshold, str):  # add quotes areound qc_threshold if it is string.
+    elif isinstance(qc_threshold, str):  # Add quotes areound qc_threshold if it is string.
         # Note: using `query` has the advantage to dynamically build the comparison condition.
         # Disadvantage: no boolean indexing available. Assumed it is ok to use 'index'
         return qc_metric.query(f"`{qc_col}` {qc_operator} '{qc_threshold}'").index
-    elif isinstance(qc_threshold, int) or isinstance(qc_threshold, float):  # query failed_rows using integers/floats
+    elif isinstance(qc_threshold, int) or isinstance(qc_threshold, float):  # Query failed_rows using integers/floats
         # Note: using `query` has the advantage to dynamically build the comparison condition.
         # Disadvantage: no boolean indexing available. Assumed it is ok to use 'index'
         return qc_metric.query(f"`{qc_col}` {qc_operator} {qc_threshold}").index
@@ -134,7 +134,7 @@ def add_failed_samples_metric(qc_metric, failed_rows, report_cols, sample_cols):
                     .rename(columns={sample_col: "sample"})
                     .loc[failed_rows, qc_metric_out.columns.to_list()]
                     .groupby(["sample", "qc_check", "qc_status"])
-                    .agg(lambda val: ';'.join(val.astype(str)))  # or .agg(lambda val: val.to_list())
+                    .agg(lambda val: ';'.join(val.astype(str)))  # Or .agg(lambda val: val.to_list())
                     .reset_index()
                 )
             )
@@ -156,7 +156,7 @@ def add_passed_samples_metric(qc_metric, qc_metric_out, sample_cols):
                 .loc[:, qc_metric_out.columns]
             )
         )
-    # In case 'multiple sample qc check', 
+    # In case 'multiple sample qc check',
     # output could contain duplicate rows for individual samples used in multiple comparisons.
     return qc_metric_out.sort_values(by=["qc_check", "qc_status"]).drop_duplicates(keep="first")
 
@@ -191,7 +191,7 @@ def check_qc(input_files, settings, output_path, output_prefix):
             # Concatenate/merge metric output
             try:
                 output = merge(output, qc_judged_renamed, on="sample", how="outer")
-            except NameError:  # first time:
+            except NameError:  # First time:
                 output = merge(
                     DataFrame(qc_metric_judged['sample'], columns=["sample"]),
                     qc_judged_renamed,
