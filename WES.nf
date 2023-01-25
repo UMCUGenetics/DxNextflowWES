@@ -234,7 +234,7 @@ workflow {
         "${params.dxtracks_path}/",
         "${params.exoncov_path}/",
         "${params.clarity_epp_path}/",
-        "${params.exomedepth_path}/../",
+        "${params.dx_resources_path}/",
         "${params.upd_path}/",
         "${params.baf_path}/",
         "${params.trend_analysis_path}/",
