@@ -229,7 +229,16 @@ workflow {
     SavePedFile(ped_file)
 
     // Create log files: Repository versions and Workflow params
-    VersionLog()
+    VersionLog(analysis_id, Channel.of(
+        "${workflow.projectDir}/",
+        "${params.dxtracks_path}/",
+        "${params.exoncov_path}/",
+        "${params.clarity_epp_path}/",
+        "${params.exomedepth_path}/../",
+        "${params.upd_path}/",
+        "${params.baf_path}/",
+        "${params.trend_analysis_path}/",
+    ).collect())
     Workflow_ExportParams()
 }
 
