@@ -81,6 +81,7 @@ include MergeVcfs as GATK_MergeVcfs from './NextflowModules/GATK/4.2.1.0/MergeVc
 
 // CustomModules
 include IGV as BAF_IGV from './CustomModules/BAF/IGV.nf'
+include CheckQC from './CustomModules/CheckQC/CheckQC.nf'
 include SampleIndications as ClarityEpp_SampleIndications from './CustomModules/ClarityEpp/SampleIndications.nf'
 include CallCNV as ExomeDepth_CallCNV from './CustomModules/ExomeDepth/CallCNV.nf'
 include GetRefset as ExomeDepth_GetRefset from './CustomModules/ExomeDepth/GetRefset.nf'
@@ -224,6 +225,16 @@ workflow {
 
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
+
+    // QC - Check and collect
+    CheckQC(
+        analysis_id, 
+        Channel.empty().mix(
+          MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
+          MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
+          Kinship.out.map{analysis, kinship_name, kinship_check_out -> [kinship_check_out]},
+        ).collect()
+    )
 
     //SavePedFile
     SavePedFile(ped_file)
