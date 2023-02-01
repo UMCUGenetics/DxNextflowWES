@@ -158,7 +158,7 @@ workflow {
     // ExomeDepth IGV sessions
     ExomeDepth_GetRefset(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
     ExomeDepth_SingleIGV(ExomeDepth_GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
-    ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect())
+    ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect(), analysis_id)
     ExomeDepth_FamilyIGV(ParseChildFromFullTrio.out.splitCsv().flatten()
         .combine(Sambamba_Merge.out.map{ sample_id, bam_file, bai_file -> [bam_file]}).groupTuple()
         .map{sample_id, bam_files -> [sample_id, bam_files, ped_file, analysis_id]}
@@ -237,7 +237,7 @@ workflow {
     )
 
     //SavePedFile
-    SavePedFile(ped_file)
+    SavePedFile(ped_file, analysis_id)
 
     // Create log files: Repository versions and Workflow params
     VersionLog(analysis_id, Channel.of(
