@@ -50,11 +50,18 @@ if [ \$? -eq 0 ]; then
     rm workflow.running
     touch workflow.done
 
+    echo "Change permissions"
+    chmod 775 -R $output
+    
     exit 0
 else
     echo "Nextflow failed"
     rm workflow.running
     touch workflow.failed
+    
+    echo "Change permissions"
+    chmod 775 -R $output
+    
     exit 1
 fi
 EOT

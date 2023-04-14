@@ -1,3 +1,6 @@
 [submodule "NextflowModules"]
 	path = NextflowModules
 	url = git@github.com:UMCUGenetics/NextflowModules.git
+[submodule "CustomModules"]
+	path = CustomModules
+	url = git@github.com:UMCUGenetics/CustomModules.git

@@ -2,7 +2,7 @@
 
 Genome Diagnostics Nextflow WES workflow
 
-#### Get Nextflow Modules
+#### Get submodules, such as NextflowModules and CustomModules
 ```bash
 git submodule update --init --recursive
 ```
