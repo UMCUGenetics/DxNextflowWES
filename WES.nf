@@ -63,6 +63,8 @@ include Flagstat as Sambamba_Flagstat from './NextflowModules/Sambamba/0.7.0/Fla
 include MultiQC from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
     optional: "--config $baseDir/assets/multiqc_config.yaml"
 )
+include { Mosdepth } from './NextflowModules/Mosdepth/0.3.3/Mosdepth.nf' params(optional: "-n -b $params.dxtracks_path/$params.exoncov_bed -Q 20")
+include { SubSample } from './NextflowModules/Sambamba/0.7.0/SubSample.nf' params(optional: "-L ${params.contamination_sites_bed}")
 include VerifyBamID2 from './NextflowModules/VerifyBamID/2.0.1--h32f71e1_2/VerifyBamID2.nf'
 
 //SNParray-calling Modules
@@ -98,6 +100,8 @@ include Kinship from './CustomModules/Utils/Kinship.nf'
 include ParseChildFromFullTrio from './CustomModules/Utils/ParseChildFromFullTrio.nf'
 include SavePedFile from './CustomModules/Utils/SavePedFile.nf'
 include VersionLog from './CustomModules/Utils/VersionLog.nf'
+include { Fraction } from './CustomModules/Utils/Parse_downsample_fraction.nf'
+
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -151,6 +155,11 @@ workflow {
     GATK_GenotypeGVCF(GATK_HaplotypeCallerGVCF.out)
     GATK_MergeVcfs(GATK_GenotypeGVCF.out.groupTuple())
 
+    //Downsampling BAM files for VerifyBAMID
+    Mosdepth(Sambamba_Merge.out)
+    Fraction(Mosdepth.out)
+    SubSample(Fraction.out.join(bam_files))
+
     // ExomeDepth
     ExomeDepth_CallCNV(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ExomeDepth_Summary(analysis_id, ExomeDepth_CallCNV.out.HC_stats_log.collect())
@@ -203,7 +212,7 @@ workflow {
     )
 
     // QC - VerifyBamID2 (contamination)
-    VerifyBamID2(Sambamba_Merge.out.groupTuple())
+    VerifyBamID2(SubSample.out.groupTuple())
 
     // QC - MultiQC report
     MultiQC(analysis_id, Channel.empty().mix(
