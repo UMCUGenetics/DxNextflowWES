@@ -158,7 +158,7 @@ workflow {
     //Downsampling BAM files for VerifyBAMID
     Mosdepth(Sambamba_Merge.out)
     Fraction(Mosdepth.out)
-    SubSample(Fraction.out.join(bam_files))
+    SubSample(Fraction.out.join(Sambamba_Merge.out))
 
     // ExomeDepth
     ExomeDepth_CallCNV(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
