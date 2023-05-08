@@ -100,7 +100,7 @@ include { Kinship } from './CustomModules/Utils/Kinship.nf'
 include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFullTrio.nf'
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
-include { Fraction } from './CustomModules/Utils/Parse_downsample_fraction.nf'
+include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
 
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
