@@ -16,7 +16,7 @@ include RealignerTargetCreator as GATK_RealignerTargetCreator from './NextflowMo
     gatk_path: "$params.gatk_path", genome: "$params.genome", optional: "$params.gatk_rtc_options"
 )
 include IndelRealigner as GATK_IndelRealigner from './NextflowModules/GATK/3.8-1-0-gf15c1c3ef/IndelRealigner.nf' params(
-    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: ""
+    gatk_path: "$params.gatk_path", genome: "$params.genome", optional: "$params.gatk_ir_options"
 )
 include ViewUnmapped as Sambamba_ViewUnmapped from './NextflowModules/Sambamba/0.7.0/ViewUnmapped.nf'
 include Merge as Sambamba_Merge from './NextflowModules/Sambamba/0.7.0/Merge.nf'
