@@ -94,7 +94,7 @@ include TrendAnalysis from './CustomModules/TrendAnalysis/TrendAnalysis.nf'
 include IGV as UPD_IGV from './CustomModules/UPD/IGV.nf'
 include CreateHSmetricsSummary from './CustomModules/Utils/CreateHSmetricsSummary.nf'
 include GetStatsFromFlagstat from './CustomModules/Utils/GetStatsFromFlagstat.nf'
-include Kinship from './CustomModules/Utils/Kinship.nf'
+include Kinship from './CustomModules/Kinship/Kinship.nf'
 include ParseChildFromFullTrio from './CustomModules/Utils/ParseChildFromFullTrio.nf'
 include SavePedFile from './CustomModules/Utils/SavePedFile.nf'
 include VersionLog from './CustomModules/Utils/VersionLog.nf'
@@ -228,7 +228,7 @@ workflow {
 
     // QC - Check and collect
     CheckQC(
-        analysis_id, 
+        analysis_id,
         Channel.empty().mix(
           MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
           MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
