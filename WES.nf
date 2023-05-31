@@ -90,7 +90,6 @@ include FamilyIGV as ExomeDepth_FamilyIGV from './CustomModules/ExomeDepth/IGV.n
 include Summary as ExomeDepth_Summary from './CustomModules/ExomeDepth/Summary.nf'
 include ImportBam as ExonCov_ImportBam from './CustomModules/ExonCov/ImportBam.nf'
 include SampleQC as ExonCov_SampleQC from './CustomModules/ExonCov/SampleQC.nf'
-include TrendAnalysis from './CustomModules/TrendAnalysis/TrendAnalysis.nf'
 include IGV as UPD_IGV from './CustomModules/UPD/IGV.nf'
 include CreateHSmetricsSummary from './CustomModules/Utils/CreateHSmetricsSummary.nf'
 include GetStatsFromFlagstat from './CustomModules/Utils/GetStatsFromFlagstat.nf'
@@ -214,14 +213,6 @@ workflow {
         VerifyBamID2.out.map{sample_id, self_sm -> [self_sm]},
         ExonCov_SampleQC.out
     ).collect())
-
-    // QC - TrendAnalysis upload
-    TrendAnalysis(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
 
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
