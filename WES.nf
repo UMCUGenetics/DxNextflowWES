@@ -239,7 +239,6 @@ workflow {
         "${params.dx_resources_path}/",
         "${params.upd_path}/",
         "${params.baf_path}/",
-        "${params.trend_analysis_path}/",
     ).collect())
     Workflow_ExportParams()
 }
