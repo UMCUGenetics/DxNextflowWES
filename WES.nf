@@ -95,7 +95,7 @@ include { SampleQC as ExonCov_SampleQC } from './CustomModules/ExonCov/SampleQC.
 include { IGV as UPD_IGV } from './CustomModules/UPD/IGV.nf'
 include { CreateHSmetricsSummary } from './CustomModules/Utils/CreateHSmetricsSummary.nf'
 include { GetStatsFromFlagstat } from './CustomModules/Utils/GetStatsFromFlagstat.nf'
-include { Kinship } from './CustomModules/Utils/Kinship.nf'
+include { Kinship } from './CustomModules/Kinship/Kinship.nf'
 include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFullTrio.nf'
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
