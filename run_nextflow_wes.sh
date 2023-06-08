@@ -29,8 +29,6 @@ sbatch <<EOT
 #SBATCH --export=NONE
 #SBATCH --account=diaggen
 
-module load Java/1.8.0_60
-
 /hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
 --fastq_path $input \
@@ -58,7 +56,7 @@ if [ \$? -eq 0 ]; then
 
     echo "Change permissions"
     chmod 775 -R $output
-    
+
     exit 0
 else
     echo "Nextflow failed"
@@ -67,7 +65,7 @@ else
 
     echo "Change permissions"
     chmod 775 -R $output
-    
+
     exit 1
 fi
 EOT
