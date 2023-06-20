@@ -92,11 +92,10 @@ include { FamilyIGV as ExomeDepth_FamilyIGV } from './CustomModules/ExomeDepth/I
 include { Summary as ExomeDepth_Summary } from './CustomModules/ExomeDepth/Summary.nf'
 include { ImportBam as ExonCov_ImportBam } from './CustomModules/ExonCov/ImportBam.nf'
 include { SampleQC as ExonCov_SampleQC } from './CustomModules/ExonCov/SampleQC.nf'
-include { TrendAnalysis } from './CustomModules/TrendAnalysis/TrendAnalysis.nf'
 include { IGV as UPD_IGV } from './CustomModules/UPD/IGV.nf'
 include { CreateHSmetricsSummary } from './CustomModules/Utils/CreateHSmetricsSummary.nf'
 include { GetStatsFromFlagstat } from './CustomModules/Utils/GetStatsFromFlagstat.nf'
-include { Kinship } from './CustomModules/Utils/Kinship.nf'
+include { Kinship } from './CustomModules/Kinship/Kinship.nf'
 include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFullTrio.nf'
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
@@ -224,24 +223,16 @@ workflow {
         ExonCov_SampleQC.out
     ).collect())
 
-    // QC - TrendAnalysis upload
-    TrendAnalysis(
-        GATK_CombineVariants.out.map{id, vcf_file, idx_file -> [id, vcf_file]}
-            .concat(GetStatsFromFlagstat.out.map{file -> [analysis_id, file]})
-            .concat(CreateHSmetricsSummary.out.map{file -> [analysis_id, file]})
-            .groupTuple()
-    )
-
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
 
     // QC - Check and collect
     CheckQC(
-        analysis_id, 
+        analysis_id,
         Channel.empty().mix(
-          MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
-          MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
-          Kinship.out.map{analysis, kinship_name, kinship_check_out -> [kinship_check_out]},
+            MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
+            MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
+            Kinship.out.map{analysis, kinship_name, kinship_check_out -> [kinship_check_out]},
         ).collect()
     )
 
@@ -257,7 +248,6 @@ workflow {
         "${params.dx_resources_path}/",
         "${params.upd_path}/",
         "${params.baf_path}/",
-        "${params.trend_analysis_path}/",
     ).collect())
     Workflow_ExportParams()
 }
