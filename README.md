@@ -1,8 +1,8 @@
-# DxNextflowWES [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4551799.svg)](https://doi.org/10.5281/zenodo.4551799)
+# DxNextflowWES [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4551798.svg)](https://doi.org/10.5281/zenodo.4551798)
 
 Genome Diagnostics Nextflow WES workflow
 
-#### Get Nextflow Modules
+#### Get submodules, such as NextflowModules and CustomModules
 ```bash
 git submodule update --init --recursive
 ```
