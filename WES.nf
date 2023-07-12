@@ -163,24 +163,32 @@ workflow {
     ExomeDepth_CallCNV(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [analysis_id, sample_id, bam_file, bai_file]})
     ExomeDepth_Summary(analysis_id, ExomeDepth_CallCNV.out.HC_stats_log.collect())
 
-    // ExomeDepth IGV sessions
+    // ExomeDepth IGV single sessions
     ExomeDepth_GetRefset(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file]}.groupTuple())
     ExomeDepth_SingleIGV(ExomeDepth_GetRefset.out.map{sample_id, refset -> [sample_id, analysis_id, refset]})
-    ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect())
-    ExomeDepth_FamilyIGV(ParseChildFromFullTrio.out.splitCsv().flatten()
-        .combine(Sambamba_Merge.out.map{ sample_id, bam_file, bai_file -> [bam_file]}).groupTuple()
-        .map{sample_id, bam_files -> [sample_id, bam_files, ped_file, analysis_id]}
-    )
 
     // BAF analysis per sample
     BAF_IGV(GATK_MergeVcfs.out)
 
     // UPD analysis per family
+    ParseChildFromFullTrio(ped_file, GATK_MergeVcfs.out.map{sample_id, vcf_file, vcf_idx_file -> [sample_id]}.collect())
     UPD_IGV(
         ped_file,
         analysis_id,
         ParseChildFromFullTrio.out.splitCsv().flatten(),
         GATK_MergeVcfs.out.map{output_name, vcf_files, vcf_idx_files -> [vcf_files]}.collect()
+    )
+
+    //ExomeDepth IGV family sessions
+    ExomeDepth_FamilyIGV(
+        ped_file,
+        analysis_id,
+        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [bam_file]}.collect(),
+        GATK_SingleSampleVCF.out.map{sample_id, vcf_files, vcf_idx_files -> [vcf_files]}.collect(),
+        ExomeDepth_CallCNV.out.HC_vcf.collect(),
+        ExomeDepth_CallCNV.out.HC_igv.collect(),
+        UPD_IGV.out.UPD_IGV_files.collect(),
+        BAF_IGV.out.BAF_IGV_files.collect()
     )
 
     // GATK UnifiedGenotyper (fingerprint)
