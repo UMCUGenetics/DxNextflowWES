@@ -100,7 +100,7 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunter } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf'
+include { MosaicHunterStepOne; MosaicHunterStepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf'
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -115,11 +115,6 @@ def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
 if (!ped_file.exists()) {
     exit 1, "ERROR: ${ped_file} not found."
 }
-
-// Define input files from parameters for MosaicHunter nextflow
-def mh_reference_file = $params.mh_reference_file
-def mh_common_site_filter_bed_file = $params.mh_common_site_filter_bed_file
-def mh_config_file = $params.mh_config_file
 
 workflow {
     // Mapping
@@ -201,9 +196,9 @@ workflow {
 
     // MosaicHunter
     // Execute MH step one
-    MosaicHunterStepOne(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), mh_reference_file, mh_common_site_filter_bed_file, mh_config_file)
+    MosaicHunterStepOne(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), $params.mh_reference_file, $params.mh_common_site_filter_bed_file, $params.mh_config_file)
     // Execute MH step two
-    MosaicHunterStepTwo(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), mh_reference_file, mh_common_site_filter_bed_file, mh_config_file, MosaicHunterStepOne.out)
+    MosaicHunterStepTwo(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), $params.mh_reference_file, $params.mh_common_site_filter_bed_file, $params.mh_config_file, MosaicHunterStepOne.out)
 
     // QC - FastQC
     FastQC(fastq_files)
