@@ -1,5 +1,4 @@
 #!/usr/bin/env nextflow
-nextflow.preview.dsl=2
 
 // Utils modules
 include { extractFastqPairFromDir } from './NextflowModules/Utils/fastq.nf'
