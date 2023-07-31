@@ -196,9 +196,9 @@ workflow {
 
     // MosaicHunter
     // Execute MH step one
-    MosaicHunterStepOne(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), $params.mh_reference_file, $params.mh_common_site_filter_bed_file, $params.mh_config_file)
+    MosaicHunterStepOne(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), "$params.mh_reference_file", "$params.mh_common_site_filter_bed_file", "$params.mh_config_file")
     // Execute MH step two
-    MosaicHunterStepTwo(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), $params.mh_reference_file, $params.mh_common_site_filter_bed_file, $params.mh_config_file, MosaicHunterStepOne.out)
+    MosaicHunterStepTwo(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(), "$params.mh_reference_file", "$params.mh_common_site_filter_bed_file", "$params.mh_config_file", MosaicHunterStepOne.out)
 
     // QC - FastQC
     FastQC(fastq_files)
