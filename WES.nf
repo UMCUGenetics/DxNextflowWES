@@ -100,7 +100,7 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunterStepOne; MosaicHunterStepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf'
+include { MosaicHunterStepOne; MosaicHunterStepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
