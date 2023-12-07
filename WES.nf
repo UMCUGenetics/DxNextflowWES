@@ -100,7 +100,7 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunterStepOne; MosaicHunterStepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
+include { MosaicHunter_StepOne; MosaicHunter_StepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -196,7 +196,7 @@ workflow {
 
     // MosaicHunter
     // Execute MH step one
-    MosaicHunterStepOne(
+    MosaicHunter_StepOne(
         Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
@@ -204,12 +204,12 @@ workflow {
     )
 
     // Execute MH step two
-    MosaicHunterStepTwo(
+    MosaicHunter_StepTwo(
         Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_two",
-        MosaicHunterStepOne.out
+        MosaicHunter_StepOne.out
     )
 
     // QC - FastQC
