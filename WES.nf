@@ -100,7 +100,8 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-
+include { SampleGender as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleGender.nf'
+include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -233,6 +234,10 @@ workflow {
 
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
+
+    // QC - GenderCheck
+    ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file]  -> [sample_id]})
+    CompareGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file]  -> [sample_id, analysis_id, bam_file, bai_file]}, ClarityEpp_SampleGender.out)
 
     // QC - Check and collect
     CheckQC(
