@@ -236,8 +236,8 @@ workflow {
     Kinship(GATK_CombineVariants.out, ped_file)
 
     // QC - GenderCheck
-    ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file]  -> [sample_id]})
-    CompareGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file]  -> [sample_id, analysis_id, bam_file, bai_file]}, ClarityEpp_SampleGender.out)
+    ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    CompareGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file  -> [sample_id, analysis_id, bam_file, bai_file]}, ClarityEpp_SampleGender.out)
 
     // QC - Check and collect
     CheckQC(
