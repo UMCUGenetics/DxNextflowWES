@@ -17,11 +17,11 @@ touch workflow.running
 
 file="log/nextflow_trace.txt"
 
-if [ -e "$file" ]; then
+if [ -e "${file}" ]; then
     # Extract the current suffix from the file name
-    current_suffix=$(echo "$file" | grep -oE '[0-9]+$')
+    current_suffix=$(echo "${file}" | grep -oE '[0-9]+$')
 
-    if [ -z "$current_suffix" ]; then
+    if [ -z "${current_suffix}" ]; then
         # If no suffix found, set it to 0
         current_suffix=0
     fi
@@ -33,7 +33,7 @@ if [ -e "$file" ]; then
     new_file="${file%.*}_$new_suffix.${file##*.}"
 
     # Rename the file
-    mv "$file" "$new_file"
+    mv "${file}" "${new_file}"
 fi
 
 sbatch <<EOT
