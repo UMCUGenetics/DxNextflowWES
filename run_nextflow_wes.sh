@@ -15,7 +15,7 @@ mkdir -p log
 if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
 touch workflow.running
 
-file="log/nextflow_trace.txt"
+file="${output}/log/nextflow_trace.txt"
 
 if [ -e "${file}" ]; then
     # Extract the current suffix from the file name
