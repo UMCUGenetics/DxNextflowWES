@@ -197,7 +197,7 @@ workflow {
     // MosaicHunter
     // Execute MH step one
     MosaicHunter_StepOne(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(),
+        Sambamba_Merge.out.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_one"
@@ -205,7 +205,7 @@ workflow {
 
     // Execute MH step two
     MosaicHunter_StepTwo(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id, bam_file, bai_file]}.groupTuple(),
+        Sambamba_Merge.out.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_two",
