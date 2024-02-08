@@ -242,10 +242,12 @@ workflow {
 
     // QC - GenderCheck
     ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
-    CompareGender(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file  -> [sample_id, analysis_id, bam_file, bai_file]},
-        ClarityEpp_SampleGender.out.map{sample_id, gender -> gender}
+    CompareGender( 
+        Sambamba_Merge.out.join(
+            ClarityEpp_SampleGender.out
+        ).map{sample_id, bam_file, bai_file, gender -> [sample_id, analysis_id, bam_file, bai_file, gender]}
     )
+
 
     // QC - Check and collect
     CheckQC(
