@@ -209,7 +209,7 @@ workflow {
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_two",
-        MosaicHunter_StepOne.out
+        MosaicHunterQualityCorrection.out
     )
 
     // QC - FastQC
