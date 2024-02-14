@@ -100,7 +100,7 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunter_StepOne; MosaicHunter_StepTwo } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
+include { MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -195,16 +195,16 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // MosaicHunter
-    // Execute MH step one
-    MosaicHunter_StepOne(
+    // Execute MH step one, Data Quality Correction
+    MosaicHunterQualityCorrection(
         Sambamba_Merge.out.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_one"
     )
 
-    // Execute MH step two
-    MosaicHunter_StepTwo(
+    // Execute MH step two, Mosaic Variant Calculation
+    MosaicHunterMosaicVariantCalculation(
         Sambamba_Merge.out.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
