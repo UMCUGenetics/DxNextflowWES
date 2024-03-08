@@ -84,7 +84,6 @@ include { MergeVcfs as GATK_MergeVcfs } from './NextflowModules/GATK/4.2.1.0/Mer
 // CustomModules
 include { IGV as BAF_IGV } from './CustomModules/BAF/IGV.nf'
 include { CheckQC } from './CustomModules/CheckQC/CheckQC.nf'
-include { SampleIndications as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleIndications.nf'
 include { CallCNV as ExomeDepth_CallCNV } from './CustomModules/ExomeDepth/CallCNV.nf'
 include { GetRefset as ExomeDepth_GetRefset } from './CustomModules/ExomeDepth/GetRefset.nf'
 include { SingleIGV as ExomeDepth_SingleIGV } from './CustomModules/ExomeDepth/IGV.nf'
@@ -101,6 +100,14 @@ include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
 include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
+include { SampleUDF as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+    udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
+)
+include { SampleUDF as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+    udf: 'Dx Geslacht', column_name: 'Gender', clarity_epp_path: params.clarity_epp_path
+)
+include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
+
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -263,6 +270,15 @@ workflow {
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
 
+    // QC - GenderCheck
+    ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    CompareGender(
+        Sambamba_Merge.out.join(
+            ClarityEpp_SampleGender.out
+        ).map{sample_id, bam_file, bai_file, gender -> [sample_id, analysis_id, bam_file, bai_file, gender]}
+    )
+
+
     // QC - Check and collect
     CheckQC(
         analysis_id,
@@ -270,6 +286,7 @@ workflow {
             MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
             MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
             Kinship.out.map{analysis, kinship_name, kinship_check_out -> [kinship_check_out]},
+            CompareGender.out
         ).collect()
     )
 

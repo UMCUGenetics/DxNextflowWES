@@ -1,7 +1,7 @@
 metrics:
   - filename: "multiqc_picard_HsMetrics.txt"
     qc_col: "PCT_TARGET_BASES_20X"
-    threshold: 0.95
+    threshold: 0.945
     operator: "<="
     report_cols: ["Sample", "PCT_TARGET_BASES_20X"]
     sample_cols: ["Sample"]
@@ -18,7 +18,14 @@ metrics:
     threshold: "FAIL"
     operator: "=="
     # special report_cols '@all' to select all columns.
-    report_cols: '@all'
+    report_cols: "@all"
     sample_cols: ["sample_1", "sample_2"]
     comment: "#"
     title: "Kinship"
+  - filename: ".*gendercheck.txt$"
+    qc_col: "status"
+    threshold: "FAIL"
+    operator: "=="
+    report_cols: ["sample_id", "test_gender", "true_gender"]
+    sample_cols: ["sample_id"]
+    title: "GenderCheck"
