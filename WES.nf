@@ -100,7 +100,7 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
+include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
 def analysis_id = params.outdir.split('/')[-1]
@@ -200,7 +200,8 @@ workflow {
         Sambamba_Merge.out.groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
-        "$params.mh_config_file_one"
+        "$params.mh_config_file_one",
+        ExomeDepth_CallCNV.out.UMCU_stats_log.collect()
     )
 
     // Execute MH step two, Mosaic Variant Calculation
@@ -209,7 +210,8 @@ workflow {
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_two",
-        MosaicHunterQualityCorrection.out
+        MosaicHunterQualityCorrection.out,
+        ExomeDepth_CallCNV.out.UMCU_stats_log.collect()
     )
 
     // QC - FastQC
