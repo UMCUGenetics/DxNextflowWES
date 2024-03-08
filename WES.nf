@@ -201,7 +201,16 @@ workflow {
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_one",
-        ExomeDepth_CallCNV.out.UMCU_stats_log.collect()
+        MosaicHunterGetGender.out
+    )
+
+    // Execute MH step one, Data Quality Correction
+    MosaicHunterQualityCorrection(
+        Sambamba_Merge.out.groupTuple(),
+        "$params.mh_reference_file",
+        "$params.mh_common_site_filter_bed_file",
+        "$params.mh_config_file_one",
+        MosaicHunterGetGender.out
     )
 
     // Execute MH step two, Mosaic Variant Calculation
@@ -211,7 +220,7 @@ workflow {
         "$params.mh_common_site_filter_bed_file",
         "$params.mh_config_file_two",
         MosaicHunterQualityCorrection.out,
-        ExomeDepth_CallCNV.out.UMCU_stats_log.collect()
+        MosaicHunterGetGender.out
     )
 
     // QC - FastQC
