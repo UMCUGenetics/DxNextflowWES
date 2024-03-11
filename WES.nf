@@ -99,10 +99,10 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { SampleUDF as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+include { SampleUDFDx as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
     udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
 )
-include { SampleUDF as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+include { SampleUDFDx as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
     udf: 'Dx Geslacht', column_name: 'Gender', clarity_epp_path: params.clarity_epp_path
 )
 include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
