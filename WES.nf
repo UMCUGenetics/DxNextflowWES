@@ -202,13 +202,9 @@ workflow {
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
     // MosaicHunter
-    // Execute MH step one, Data Quality Correction
-    MosaicHunterQualityCorrection(
+    // Execute MH Get Gender process
+    MosaicHunterGetGender(
         Sambamba_Merge.out.groupTuple(),
-        "$params.mh_reference_file",
-        "$params.mh_common_site_filter_bed_file",
-        "$params.mh_config_file_one",
-        MosaicHunterGetGender.out
     )
 
     // Execute MH step one, Data Quality Correction
