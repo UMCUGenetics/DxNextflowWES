@@ -99,7 +99,13 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(outdir:"${params.outdir}")
+include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(
+    outdir:"${params.outdir}",
+    mh_gender_ratio_x_threshold_male: params.mh_gender_ratio_x_threshold_male,
+    mh_gender_ratio_x_threshold_female: params.mh_gender_ratio_x_threshold_female,
+    mh_gender_mapping_qual: params.mh_gender_mapping_qual,
+    mh_gender_locus_x: params.mh_gender_locus_x
+)
 include { SampleUDF as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
     udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
 )
