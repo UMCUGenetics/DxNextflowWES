@@ -218,7 +218,7 @@ workflow {
         Sambamba_Merge.out.join(MosaicHunterGetGender.out).groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}$params.mh_config_file_one"
+        "${workflow.projectDir}/$params.mh_config_file_one"
     )
 
     // Execute MH step two, Mosaic Variant Calculation
@@ -226,7 +226,7 @@ workflow {
         Sambamba_Merge.out.join(MosaicHunterGetGender.out).join(MosaicHunterQualityCorrection.out),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}$params.mh_config_file_two"
+        "${workflow.projectDir}/$params.mh_config_file_two"
     )
 
     // QC - FastQC
