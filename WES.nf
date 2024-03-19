@@ -215,21 +215,18 @@ workflow {
 
     // Execute MH step one, Data Quality Correction
     MosaicHunterQualityCorrection(
-        Sambamba_Merge.out.groupTuple(),
+        Sambamba_Merge.out.join(MosaicHunterGetGender.out).groupTuple(),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}$params.mh_config_file_one",
-        MosaicHunterGetGender.out
+        "${workflow.projectDir}$params.mh_config_file_one"
     )
 
     // Execute MH step two, Mosaic Variant Calculation
     MosaicHunterMosaicVariantCalculation(
-        Sambamba_Merge.out.groupTuple(),
+        Sambamba_Merge.out.join(MosaicHunterGetGender.out).join(MosaicHunterQualityCorrection.out),
         "$params.mh_reference_file",
         "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}$params.mh_config_file_two",
-        MosaicHunterQualityCorrection.out,
-        MosaicHunterGetGender.out
+        "${workflow.projectDir}$params.mh_config_file_two"
     )
 
     // QC - FastQC
