@@ -22,3 +22,10 @@ metrics:
     sample_cols: ["sample_1", "sample_2"]
     comment: "#"
     title: "Kinship"
+  - filename: ".*gendercheck.txt$"
+    qc_col: "status"
+    threshold: "FAIL"
+    operator: "=="
+    report_cols: ["sample_id", "test_gender", "true_gender"]
+    sample_cols: ["sample_id"]
+    title: "GenderCheck"

@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 // Utils modules
 include { extractFastqPairFromDir } from './NextflowModules/Utils/fastq.nf'
@@ -61,7 +61,7 @@ include { CollectHsMetrics as PICARD_CollectHsMetrics } from './NextflowModules/
 )
 include { Flagstat as Sambamba_Flagstat } from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
 include { MultiQC } from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
-    optional: "--config $baseDir/assets/multiqc_config.yaml"
+    optional: "--config $projectDir/assets/multiqc_config.yaml"
 )
 include { Mosdepth } from './NextflowModules/Mosdepth/0.3.3/Mosdepth.nf' params(optional: "-n -b $params.dxtracks_path/$params.exoncov_bed -Q 20")
 include { Subsample as Sambamba_ViewSubsample } from './NextflowModules/Sambamba/0.7.0/ViewSubsample.nf' params(optional: "-L ${params.contamination_sites_bed}")
@@ -84,7 +84,6 @@ include { MergeVcfs as GATK_MergeVcfs } from './NextflowModules/GATK/4.2.1.0/Mer
 // CustomModules
 include { IGV as BAF_IGV } from './CustomModules/BAF/IGV.nf'
 include { CheckQC } from './CustomModules/CheckQC/CheckQC.nf'
-include { SampleIndications as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleIndications.nf'
 include { CallCNV as ExomeDepth_CallCNV } from './CustomModules/ExomeDepth/CallCNV.nf'
 include { GetRefset as ExomeDepth_GetRefset } from './CustomModules/ExomeDepth/GetRefset.nf'
 include { SingleIGV as ExomeDepth_SingleIGV } from './CustomModules/ExomeDepth/IGV.nf'
@@ -100,6 +99,20 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
+include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(
+    outdir:"${params.outdir}",
+    mh_gender_ratio_x_threshold_male: params.mh_gender_ratio_x_threshold_male,
+    mh_gender_ratio_x_threshold_female: params.mh_gender_ratio_x_threshold_female,
+    mh_gender_mapping_qual: params.mh_gender_mapping_qual,
+    mh_gender_locus_x: params.mh_gender_locus_x
+)
+include { SampleUDFDx as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
+    udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
+)
+include { SampleUDFDx as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
+    udf: 'Dx Geslacht', column_name: 'Gender', clarity_epp_path: params.clarity_epp_path
+)
+include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
 
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
@@ -113,7 +126,7 @@ def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
 // Define ped file, used in Kinship
 def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
 if (!ped_file.exists()) {
-    exit 1, "ERROR: ${ped_file} not found."
+    error("ERROR: ${ped_file} not found.")
 }
 
 workflow {
@@ -194,6 +207,28 @@ workflow {
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
 
+    // MosaicHunter
+    // Execute MH Get Gender process
+    MosaicHunterGetGender(
+        Sambamba_Merge.out.groupTuple(),
+    )
+
+    // Execute MH step one, Data Quality Correction
+    MosaicHunterQualityCorrection(
+        Sambamba_Merge.out.join(MosaicHunterGetGender.out).groupTuple(),
+        "$params.mh_reference_file",
+        "$params.mh_common_site_filter_bed_file",
+        "${workflow.projectDir}/$params.mh_config_file_one"
+    )
+
+    // Execute MH step two, Mosaic Variant Calculation
+    MosaicHunterMosaicVariantCalculation(
+        Sambamba_Merge.out.join(MosaicHunterGetGender.out).join(MosaicHunterQualityCorrection.out),
+        "$params.mh_reference_file",
+        "$params.mh_common_site_filter_bed_file",
+        "${workflow.projectDir}/$params.mh_config_file_two"
+    )
+
     // QC - FastQC
     FastQC(fastq_files)
 
@@ -234,6 +269,15 @@ workflow {
     // QC - Kinship
     Kinship(GATK_CombineVariants.out, ped_file)
 
+    // QC - GenderCheck
+    ClarityEpp_SampleGender(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> sample_id})
+    CompareGender(
+        Sambamba_Merge.out.join(
+            ClarityEpp_SampleGender.out
+        ).map{sample_id, bam_file, bai_file, gender -> [sample_id, analysis_id, bam_file, bai_file, gender]}
+    )
+
+
     // QC - Check and collect
     CheckQC(
         analysis_id,
@@ -241,6 +285,7 @@ workflow {
             MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_picard_HsMetrics.txt']},
             MultiQC.out.map{html, report_data_dir -> [report_data_dir + '/multiqc_verifybamid.txt']},
             Kinship.out.map{analysis, kinship_name, kinship_check_out -> [kinship_check_out]},
+            CompareGender.out
         ).collect()
     )
 
@@ -263,7 +308,7 @@ workflow {
 // Workflow completion notification
 workflow.onComplete {
     // HTML Template
-    def template = new File("$baseDir/assets/workflow_complete.html")
+    def template = new File("$projectDir/assets/workflow_complete.html")
     def binding = [
         runName: analysis_id,
         workflow: workflow

@@ -22,7 +22,7 @@ workflow {
 // Workflow completion notification
 workflow.onComplete {
     // HTML Template
-    def template = new File("$baseDir/assets/workflow_complete.html")
+    def template = new File("$projectDir/assets/workflow_complete.html")
     def binding = [
         runName: analysis_id,
         workflow: workflow

@@ -15,6 +15,27 @@ mkdir -p log
 if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
 touch workflow.running
 
+file="${output}/log/nextflow_trace.txt"
+
+if [ -e "${file}" ]; then
+    # Extract the current suffix from the file name
+    current_suffix=$(echo "${file}" | grep -oE '[0-9]+$')
+
+    if [ -z "${current_suffix}" ]; then
+        # If no suffix found, set it to 0
+        current_suffix=0
+    fi
+
+    # Increment the suffix
+    new_suffix=$((current_suffix + 1))
+
+    # Create the new file name with the incremented suffix
+    new_file="${file%.*}_$new_suffix.${file##*.}"
+
+    # Rename the file
+    mv "${file}" "${new_file}"
+fi
+
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=36:00:00
