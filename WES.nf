@@ -1,5 +1,5 @@
 #!/usr/bin/env nextflow
-nextflow.preview.dsl=2
+nextflow.enable.dsl=2
 
 // Utils modules
 include { extractFastqPairFromDir } from './NextflowModules/Utils/fastq.nf'
@@ -61,7 +61,7 @@ include { CollectHsMetrics as PICARD_CollectHsMetrics } from './NextflowModules/
 )
 include { Flagstat as Sambamba_Flagstat } from './NextflowModules/Sambamba/0.7.0/Flagstat.nf'
 include { MultiQC } from './NextflowModules/MultiQC/1.10/MultiQC.nf' params(
-    optional: "--config $baseDir/assets/multiqc_config.yaml"
+    optional: "--config $projectDir/assets/multiqc_config.yaml"
 )
 include { Mosdepth } from './NextflowModules/Mosdepth/0.3.3/Mosdepth.nf' params(optional: "-n -b $params.dxtracks_path/$params.exoncov_bed -Q 20")
 include { Subsample as Sambamba_ViewSubsample } from './NextflowModules/Sambamba/0.7.0/ViewSubsample.nf' params(optional: "-L ${params.contamination_sites_bed}")
@@ -106,10 +106,10 @@ include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosa
     mh_gender_mapping_qual: params.mh_gender_mapping_qual,
     mh_gender_locus_x: params.mh_gender_locus_x
 )
-include { SampleUDF as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+include { SampleUDFDx as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
     udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
 )
-include { SampleUDF as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDF.nf' params (
+include { SampleUDFDx as ClarityEpp_SampleGender } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
     udf: 'Dx Geslacht', column_name: 'Gender', clarity_epp_path: params.clarity_epp_path
 )
 include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
@@ -126,7 +126,7 @@ def chromosomes = Channel.fromPath(params.genome.replace('fasta', 'dict'))
 // Define ped file, used in Kinship
 def ped_file = file("${params.ped_folder}/${analysis_id}.ped")
 if (!ped_file.exists()) {
-    exit 1, "ERROR: ${ped_file} not found."
+    error("ERROR: ${ped_file} not found.")
 }
 
 workflow {
@@ -308,7 +308,7 @@ workflow {
 // Workflow completion notification
 workflow.onComplete {
     // HTML Template
-    def template = new File("$baseDir/assets/workflow_complete.html")
+    def template = new File("$projectDir/assets/workflow_complete.html")
     def binding = [
         runName: analysis_id,
         workflow: workflow
