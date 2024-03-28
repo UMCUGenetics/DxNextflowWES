@@ -55,6 +55,8 @@ sbatch <<EOT
 #SBATCH --export=NONE
 #SBATCH --account=diaggen
 
+export NXF_JAVA_HOME='/hpc/diaggen/software/tools/jdk-20.0.2/'
+
 /hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
 --fastq_path $input \
