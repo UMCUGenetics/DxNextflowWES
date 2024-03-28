@@ -15,23 +15,28 @@ mkdir -p log
 if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
 touch workflow.running
 
-file="${output}/log/nextflow_trace.txt"
-
+output_log="${output}/log"
+file="${output_log}/nextflow_trace.txt"
+# Check if nextflow_trace.txt exists
 if [ -e "${file}" ]; then
-    # Extract the current suffix from the file name
-    current_suffix=$(echo "${file}" | grep -oE '[0-9]+$')
-
-    if [ -z "${current_suffix}" ]; then
-        # If no suffix found, set it to 0
-        current_suffix=0
+    current_suffix=0
+    # Get a list of all trace files WITH a suffix
+    trace_file_list=$(ls "${output_log}"/nextflow_trace_*.txt 2> /dev/null)
+    # Check if any trance files with a suffix exist
+    if [ "$?" -eq 0 ]; then
+        # Check for each trace file with a suffix if the suffix is the highest and save that one as the current suffix
+        for trace_file in ${trace_file_list}; do
+            basename_trace_file=$(basename "${trace_file}")
+            suffix=$(echo "${basename_trace_file}" | grep -oE '[0-9]+')
+            if [ "${suffix}" -gt "${current_suffix}" ]; then
+                current_suffix=${suffix}
+            fi
+        done
     fi
-
     # Increment the suffix
     new_suffix=$((current_suffix + 1))
-
     # Create the new file name with the incremented suffix
     new_file="${file%.*}_$new_suffix.${file##*.}"
-
     # Rename the file
     mv "${file}" "${new_file}"
 fi
