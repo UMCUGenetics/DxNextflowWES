@@ -22,7 +22,7 @@ if [ -e "${file}" ]; then
     current_suffix=0
     # Get a list of all trace files WITH a suffix
     trace_file_list=$(ls "${output_log}"/nextflow_trace_*.txt 2> /dev/null)
-    # Check if any trance files with a suffix exist
+    # Check if any trace files with a suffix exist
     if [ "$?" -eq 0 ]; then
         # Check for each trace file with a suffix if the suffix is the highest and save that one as the current suffix
         for trace_file in ${trace_file_list}; do
