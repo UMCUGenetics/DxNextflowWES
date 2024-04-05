@@ -21,13 +21,18 @@ file="${output_log}/nextflow_trace.txt"
 if [ -e "${file}" ]; then
     current_suffix=0
     # Get a list of all trace files WITH a suffix
-    trace_file_list=$(ls "${output_log}"/nextflow_trace_*.txt 2> /dev/null)
+    trace_file_list=$(ls "${output_log}"/nextflow_trace*.txt 2> /dev/null)
     # Check if any trace files with a suffix exist
     if [ "$?" -eq 0 ]; then
         # Check for each trace file with a suffix if the suffix is the highest and save that one as the current suffix
         for trace_file in ${trace_file_list}; do
             basename_trace_file=$(basename "${trace_file}")
-            suffix=$(echo "${basename_trace_file}" | grep -oE '[0-9]+')
+            if echo "${basename_trace_file}" | grep -qE '[0-9]+'; then
+                suffix=$(echo "${basename_trace_file}" | grep -oE '[0-9]+')
+            else
+                suffix=0
+            fi
+
             if [ "${suffix}" -gt "${current_suffix}" ]; then
                 current_suffix=${suffix}
             fi
