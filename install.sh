@@ -22,6 +22,7 @@ echo "Downloading and installing OpenJDK"
 # Download OpenJDK and untar
 wget ${java_download_url} -O - | tar -xz
 
+# Remove the version number of the Java exec directory, since it's listed as a version independent folder in the run script
 # Only one file should be there, but still a for loop because the last part of the file is unknown
 for file in ${repo_dir}/tools/java/*; do
     # Use sed to remove trailing bash, "-" and numbers
