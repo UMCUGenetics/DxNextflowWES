@@ -15,6 +15,37 @@ mkdir -p log
 if ! { [ -f 'workflow.running' ] || [ -f 'workflow.done' ] || [ -f 'workflow.failed' ]; }; then
 touch workflow.running
 
+output_log="${output}/log"
+file="${output_log}/nextflow_trace.txt"
+# Check if nextflow_trace.txt exists
+if [ -e "${file}" ]; then
+    current_suffix=0
+    # Get a list of all trace files WITH a suffix
+    trace_file_list=$(ls "${output_log}"/nextflow_trace*.txt 2> /dev/null)
+    # Check if any trace files with a suffix exist
+    if [ "$?" -eq 0 ]; then
+        # Check for each trace file with a suffix if the suffix is the highest and save that one as the current suffix
+        for trace_file in ${trace_file_list}; do
+            basename_trace_file=$(basename "${trace_file}")
+            if echo "${basename_trace_file}" | grep -qE '[0-9]+'; then
+                suffix=$(echo "${basename_trace_file}" | grep -oE '[0-9]+')
+            else
+                suffix=0
+            fi
+
+            if [ "${suffix}" -gt "${current_suffix}" ]; then
+                current_suffix=${suffix}
+            fi
+        done
+    fi
+    # Increment the suffix
+    new_suffix=$((current_suffix + 1))
+    # Create the new file name with the incremented suffix
+    new_file="${file%.*}_$new_suffix.${file##*.}"
+    # Rename the file
+    mv "${file}" "${new_file}"
+fi
+
 sbatch <<EOT
 #!/bin/bash
 #SBATCH --time=36:00:00
@@ -29,7 +60,9 @@ sbatch <<EOT
 #SBATCH --export=NONE
 #SBATCH --account=diaggen
 
-/hpc/diaggen/software/tools/nextflow run $workflow_path/WES.nf \
+export NXF_JAVA_HOME='$workflow_path/tools/java/jdk'
+
+$workflow_path/tools/nextflow/nextflow run $workflow_path/WES.nf \
 -c $workflow_path/WES.config \
 --fastq_path $input \
 --outdir $output \

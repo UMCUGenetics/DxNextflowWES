@@ -2,15 +2,9 @@
 
 Genome Diagnostics Nextflow WES workflow
 
-#### Get submodules, such as NextflowModules and CustomModules
+#### Get submodules, such as NextflowModules and CustomModules and install OpenJDK and Nextflow
 ```bash
-git submodule update --init --recursive
-```
-
-#### Install Nextflow
-```bash
-mkdir tools && cd tools
-curl -s https://get.nextflow.io | bash
+sh install.sh
 ```
 
 #### Running WES workflow
