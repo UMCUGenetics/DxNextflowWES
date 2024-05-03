@@ -99,13 +99,6 @@ include { ParseChildFromFullTrio } from './CustomModules/Utils/ParseChildFromFul
 include { SavePedFile } from './CustomModules/Utils/SavePedFile.nf'
 include { VersionLog } from './CustomModules/Utils/VersionLog.nf'
 include { Fraction } from './CustomModules/Utils/ParseDownsampleFraction.nf'
-include { MosaicHunterGetGender; MosaicHunterQualityCorrection; MosaicHunterMosaicVariantCalculation } from './CustomModules/MosaicHunter/1.0.0/MosaicHunter.nf' params(
-    outdir:"${params.outdir}",
-    mh_gender_ratio_x_threshold_male: params.mh_gender_ratio_x_threshold_male,
-    mh_gender_ratio_x_threshold_female: params.mh_gender_ratio_x_threshold_female,
-    mh_gender_mapping_qual: params.mh_gender_mapping_qual,
-    mh_gender_locus_x: params.mh_gender_locus_x
-)
 include { SampleUDFDx as ClarityEpp_SampleIndications } from './CustomModules/ClarityEpp/SampleUDFDx.nf' params (
     udf: 'Dx Onderzoeksindicatie', column_name: 'Indication', clarity_epp_path: params.clarity_epp_path
 )
@@ -206,28 +199,6 @@ workflow {
 
     // GATK UnifiedGenotyper (fingerprint)
     GATK_UnifiedGenotyper(Sambamba_Merge.out)
-
-    // MosaicHunter
-    // Execute MH Get Gender process
-    MosaicHunterGetGender(
-        Sambamba_Merge.out.groupTuple(),
-    )
-
-    // Execute MH step one, Data Quality Correction
-    MosaicHunterQualityCorrection(
-        Sambamba_Merge.out.join(MosaicHunterGetGender.out).groupTuple(),
-        "$params.mh_reference_file",
-        "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}/$params.mh_config_file_one"
-    )
-
-    // Execute MH step two, Mosaic Variant Calculation
-    MosaicHunterMosaicVariantCalculation(
-        Sambamba_Merge.out.join(MosaicHunterGetGender.out).join(MosaicHunterQualityCorrection.out),
-        "$params.mh_reference_file",
-        "$params.mh_common_site_filter_bed_file",
-        "${workflow.projectDir}/$params.mh_config_file_two"
-    )
 
     // QC - FastQC
     FastQC(fastq_files)
