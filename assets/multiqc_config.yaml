@@ -96,7 +96,7 @@ table_cond_formatting_rules:
     warn:
       - lt: 96
     fail:
-      - lt: 94.5
+      - lt: 93.5
   mqc-generalstats-verifybamid-FREEMIX:
     pass:
       - lt: 4
