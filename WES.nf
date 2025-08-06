@@ -106,6 +106,7 @@ include { SampleUDFDx as ClarityEpp_SampleGender } from './CustomModules/Clarity
     udf: 'Dx Geslacht', column_name: 'Gender', clarity_epp_path: params.clarity_epp_path
 )
 include { CompareGender } from './CustomModules/GenderCheck/CompareGender.nf'
+include { FranklinVCF } from './CustomModules/FranklinVCF/FranklinVCF.nf'
 
 
 def fastq_files = extractFastqPairFromDir(params.fastq_path)
@@ -146,8 +147,10 @@ workflow {
     )
     GATK_VariantFiltration(GATK_HaplotypeCaller.out)
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
-    GATK_SingleSampleVCF(GATK_CombineVariants.out.combine(
-        Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
+    FranklinVCF(GATK_CombineVariants.out)
+    GATK_SingleSampleVCF(
+        FranklinVCF.out.map{analysis_id, vcf_file -> [analysis_id, vcf_file, []]}
+        .combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
     )
 
     // GATK HaplotypeCaller (SNParray target)
