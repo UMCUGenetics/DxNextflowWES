@@ -149,7 +149,7 @@ workflow {
     GATK_CombineVariants(GATK_VariantFiltration.out.groupTuple())
     FranklinVCF(GATK_CombineVariants.out)
     GATK_SingleSampleVCF(
-        FranklinVCF.out.map{analysis_id, vcf_file -> [analysis_id, vcf_file, []]}
+        FranklinVCF.out.map{id, vcf_file -> [id, vcf_file, []]}
         .combine(Sambamba_Merge.out.map{sample_id, bam_file, bai_file -> [sample_id]})
     )
 
